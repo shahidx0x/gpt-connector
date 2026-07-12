@@ -13,9 +13,9 @@ from localcontrol.models import ErrorResponse
 
 def create_app() -> FastAPI:
     app = FastAPI(
-        title="Windows GPT-Connect Bridge",
+        title="GPT-Connect Bridge",
         version=__version__,
-        description="Private Windows control API intended for a single Custom GPT Action.",
+        description="Private local control API intended for a single Custom GPT Action.",
         docs_url=None,
         redoc_url=None,
         openapi_url=None,

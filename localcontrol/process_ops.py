@@ -43,22 +43,28 @@ def list_processes(payload: ProcessListRequest) -> ProcessListResponse:
                 break
     else:
         completed = subprocess.run(
-            ["ps", "-eo", "pid=,comm="],
+            ["ps", "-eo", "pid=,comm=,rss="],
             capture_output=True,
             text=True,
             encoding="utf-8",
             errors="replace",
             timeout=10,
         )
+        if completed.returncode != 0:
+            raise LocalControlError("process_list_failed", completed.stderr.strip() or "ps failed.", status_code=500)
         for line in completed.stdout.splitlines():
-            parts = line.strip().split(None, 1)
-            if len(parts) != 2:
+            parts = line.strip().split(None, 2)
+            if len(parts) < 2:
                 continue
-            pid = int(parts[0])
+            try:
+                pid = int(parts[0])
+            except ValueError:
+                continue
             name = parts[1]
+            memory = f"{parts[2]} KiB" if len(parts) > 2 else None
             if query and query not in name.lower():
                 continue
-            processes.append(ProcessInfo(pid=pid, name=name))
+            processes.append(ProcessInfo(pid=pid, name=name, memory=memory))
             if len(processes) >= payload.max_results:
                 truncated = True
                 break
@@ -85,11 +91,46 @@ def kill_process(payload: ProcessKillRequest) -> ProcessKillResponse:
         stderr, _ = truncate_text(completed.stderr, 8192)
         return ProcessKillResponse(pid=payload.pid, killed=completed.returncode == 0, stdout=stdout, stderr=stderr)
 
-    try:
-        os.kill(payload.pid, signal.SIGKILL if payload.force else signal.SIGTERM)
-    except ProcessLookupError as exc:
-        raise LocalControlError("process_not_found", "Process was not found.", status_code=404) from exc
-    except PermissionError as exc:
-        raise LocalControlError("permission_denied", "Permission denied killing process.", status_code=403) from exc
-    return ProcessKillResponse(pid=payload.pid, killed=True, stdout="", stderr="")
+    signal_to_send = signal.SIGKILL if payload.force else signal.SIGTERM
+    stdout_lines: list[str] = []
+    stderr_lines: list[str] = []
+    target_pids = [payload.pid]
+    if payload.tree:
+        target_pids = [*list(_descendant_pids(payload.pid)), payload.pid]
 
+    for pid in target_pids:
+        try:
+            os.kill(pid, signal_to_send)
+            stdout_lines.append(f"sent {signal_to_send.name} to pid {pid}")
+        except ProcessLookupError:
+            if pid == payload.pid:
+                raise LocalControlError("process_not_found", "Process was not found.", status_code=404) from None
+        except PermissionError:
+            if pid == payload.pid:
+                raise LocalControlError("permission_denied", "Permission denied killing process.", status_code=403) from None
+            stderr_lines.append(f"permission denied killing child pid {pid}")
+    return ProcessKillResponse(pid=payload.pid, killed=True, stdout="\n".join(stdout_lines), stderr="\n".join(stderr_lines))
+
+
+def _descendant_pids(pid: int) -> list[int]:
+    try:
+        completed = subprocess.run(
+            ["pgrep", "-P", str(pid)],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=5,
+        )
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return []
+
+    children: list[int] = []
+    for raw in completed.stdout.split():
+        try:
+            child = int(raw)
+        except ValueError:
+            continue
+        children.extend(_descendant_pids(child))
+        children.append(child)
+    return children

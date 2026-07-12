@@ -1,4 +1,4 @@
-"""Windows GPT-Connect bridge."""
+"""Cross-platform GPT-Connect bridge."""
 
 __all__ = ["__version__"]
 

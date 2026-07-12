@@ -1,19 +1,33 @@
 # GPT-Connect
 
-Private FastAPI bridge for letting a Custom GPT call typed Windows control endpoints: file I/O, search, shell commands, process inspection, terminal sessions, and execution logs.
+Private FastAPI bridge for letting a Custom GPT call typed local-control endpoints on Windows or Linux: file I/O, search, shell commands, process inspection, terminal sessions, and execution logs.
 
 ## Quick Start
+
+Windows:
 
 ```bat
 run.bat
 ```
 
-`run.bat` creates `.venv` if needed, installs dependencies, opens the prelaunch settings UI, and starts the main app after you click **Start GPT-Connect**.
+Ubuntu/Linux:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y python3 python3-venv
+./run.sh
+```
+
+`run.bat` and `run.sh` create `.venv` if needed, install dependencies, open the prelaunch settings UI, and start the main app after you click **Start GPT-Connect**.
 
 The default start mode is API + ngrok tunnel. To open settings with API-only selected:
 
 ```bat
 run.bat serve
+```
+
+```bash
+./run.sh serve
 ```
 
 This repo already has a generated `.env` with SHA-256 token hashes. The raw generated tokens are in the ignored local file `localcontrol-keys.txt`.
@@ -28,6 +42,10 @@ Open one terminal and run:
 run.bat
 ```
 
+```bash
+./run.sh
+```
+
 The settings page opens first on a temporary `127.0.0.1` port. Configure the API key, port, and ngrok token, then click **Start GPT-Connect**.
 
 Open a second terminal in this folder and run:
@@ -35,6 +53,11 @@ Open a second terminal in this folder and run:
 ```bat
 run.bat check
 run.bat test
+```
+
+```bash
+./run.sh check
+./run.sh test
 ```
 
 You can also open `http://127.0.0.1:8765/health` in a browser. It should show `auth_configured` and `approval_configured` as `true`.
@@ -47,7 +70,7 @@ Startup now shows the settings UI before the main app starts. After startup, the
 http://127.0.0.1:8765/ui
 ```
 
-The UI uses the same bearer token as the API. It can refresh runtime config, reveal or randomize the API key, update the saved port, set the ngrok authtoken/domain/public URL, and run PowerShell or `cmd.exe` terminal sessions through the existing terminal API.
+The UI uses the same bearer token as the API. It can refresh runtime config, reveal or randomize the API key, update the saved port, set the ngrok authtoken/domain/public URL, and run `auto`, PowerShell, `cmd.exe`, `bash`, or `sh` terminal sessions through the existing terminal API.
 
 Secret values are masked by default. Click **Reveal** after entering the bearer token when you need to show or copy the current API key or ngrok authtoken. Port and tunnel setting changes are saved to `.env`; port and active tunnel changes take effect on restart.
 
@@ -57,6 +80,10 @@ GPT-Connect now runs in full-control mode by default. Authenticated requests exe
 
 ```bat
 run.bat
+```
+
+```bash
+./run.sh
 ```
 
 Bearer auth, rate limits, output truncation, redaction defaults, and in-memory execution logging still remain active. Check `http://127.0.0.1:8765/health` and look for `"full_control": true`.
@@ -72,6 +99,8 @@ Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8765/shell/run -Headers $he
 Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8765/search/content -Headers $headers -ContentType application/json -Body '{"project_id":"app1","pattern":"TODO"}'
 ```
 
+Ubuntu/Linux can use the same endpoints with `shell` set to `bash`, `sh`, or `auto`.
+
 If both `project_id` and a relative `cwd` or `root` are provided, the relative path is resolved inside the registered project root.
 
 Git does not have a separate API surface. Use the locally installed `git` executable through `/shell/run`, usually with `project_id` set to the registered repository root.
@@ -82,6 +111,10 @@ Shell commands run through a bounded worker pool. The default worker count is `m
 
 ```powershell
 $env:LOCALCONTROL_MAX_SHELL_WORKERS = "32"
+```
+
+```bash
+export LOCALCONTROL_MAX_SHELL_WORKERS=32
 ```
 
 `/health` reports `cpu_count` and `max_shell_workers`.
@@ -119,6 +152,8 @@ Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8765/terminal/sessions/$($
 ```
 
 For interactive commands, send more input with `/terminal/sessions/{session_id}/stdin`. Terminate finished sessions with `/terminal/sessions/{session_id}/terminate`.
+
+Supported shell values are `auto`, `powershell`, `cmd`, `bash`, and `sh`. `auto` resolves to PowerShell on Windows and bash on Linux.
 
 ## Execution Logs
 
@@ -163,6 +198,12 @@ Routes stay thin: they validate requests and call one operation module. Runtime 
    .\.venv\Scripts\python.exe .\scripts\export_openapi.py --server-url https://YOUR-RESERVED-NGROK-DOMAIN.ngrok-free.app
    ```
 
+   On Ubuntu/Linux:
+
+   ```bash
+   ./.venv/bin/python scripts/export_openapi.py --server-url https://YOUR-RESERVED-NGROK-DOMAIN.ngrok-free.app
+   ```
+
 2. In your Custom GPT action settings, import `gpt-actions.openapi.yaml` or paste this public schema URL when the tunnel is running:
 
    ```text
@@ -189,14 +230,22 @@ run.bat tunnel
 ngrok.bat
 ```
 
+```bash
+./run.sh tunnel
+```
+
 Tunnel mode starts GPT-Connect in the background, waits for `http://127.0.0.1:8765/health`, starts ngrok, detects the public HTTPS URL, regenerates `gpt-actions.openapi.yaml` for that URL, and keeps both processes alive until the tunnel exits.
 
-If ngrok is not installed, `run.bat tunnel` downloads the Windows ngrok ZIP and installs `ngrok.exe` locally under `.local-tools\ngrok\`. That folder is ignored by git.
+If ngrok is not installed, `run.bat tunnel` downloads the Windows ngrok ZIP and installs `ngrok.exe` locally under `.local-tools\ngrok\`. On Ubuntu/Linux, `./run.sh tunnel` downloads the Linux ngrok archive and installs `ngrok` under `.local-tools/ngrok/`. That folder is ignored by git.
 
 ngrok requires an account authtoken. Tunnel mode uses `LOCALCONTROL_NGROK_AUTHTOKEN` or `NGROK_AUTHTOKEN` when set; otherwise it prompts and saves the token with `ngrok config add-authtoken`.
 
 ```powershell
 $env:LOCALCONTROL_NGROK_AUTHTOKEN = "paste-your-ngrok-token-here"
+```
+
+```bash
+export LOCALCONTROL_NGROK_AUTHTOKEN="paste-your-ngrok-token-here"
 ```
 
 For a reserved ngrok domain, set one of these before starting:
@@ -207,6 +256,12 @@ $env:LOCALCONTROL_NGROK_DOMAIN = "oblong-bonus-retrace.ngrok-free.dev"
 $env:LOCALCONTROL_PUBLIC_URL = "https://oblong-bonus-retrace.ngrok-free.dev"
 ```
 
+```bash
+export LOCALCONTROL_NGROK_DOMAIN="oblong-bonus-retrace.ngrok-free.dev"
+# or:
+export LOCALCONTROL_PUBLIC_URL="https://oblong-bonus-retrace.ngrok-free.dev"
+```
+
 Optional:
 
 ```powershell
@@ -214,6 +269,13 @@ $env:LOCALCONTROL_NGROK_EXE = "C:\Tools\ngrok.exe"
 $env:LOCALCONTROL_NGROK_DOWNLOAD_URL = "https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-windows-amd64.zip"
 $env:LOCALCONTROL_NGROK_API_PORT = "4040"
 $env:LOCALCONTROL_NGROK_URL_TIMEOUT_SECONDS = "300"
+```
+
+```bash
+export LOCALCONTROL_NGROK_EXE="/opt/ngrok/ngrok"
+export LOCALCONTROL_NGROK_DOWNLOAD_URL="https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz"
+export LOCALCONTROL_NGROK_API_PORT=4040
+export LOCALCONTROL_NGROK_URL_TIMEOUT_SECONDS=300
 ```
 
 If no reserved domain is configured, tunnel mode uses ngrok's local API to read the random public HTTPS URL and exports the GPT schema for that URL. Keep the tunnel window open while your Custom GPT is using the API.
@@ -226,7 +288,7 @@ If ngrok rejects the token, exits early, or never publishes a public URL, the la
 - Authenticated control operations execute directly without risk assessment or approval prompts.
 - Deletes execute directly. No quarantine directory is maintained.
 - Shell calls run through a CPU-aware worker pool with explicit shell choice, project/cwd, timeout, and output size limits.
-- `cmd.exe` and PowerShell launch with non-profile command flags optimized for automation.
+- `cmd.exe`, PowerShell, bash, and sh launch with automation-friendly flags.
 - Outputs are tracked in `/execution/logs`, truncated in direct responses, and common secrets are redacted unless `include_secrets=true`.
 - Persistent audit JSONL logging is disabled; command/session output remains available in memory through `/execution/logs`.
 
@@ -288,9 +350,39 @@ That creates `dist\GPT-Connect.exe`; double-clicking it also starts tunnel mode.
 .\scripts\build-exe.ps1 -OneFile -NoBundleNgrok
 ```
 
+## Linux Executable Bundle
+
+On Ubuntu/Linux, build a one-file executable with PyInstaller:
+
+```bash
+./scripts/build-exe.sh --onefile
+```
+
+That creates:
+
+```text
+dist/GPT-Connect
+```
+
+The build bundles the Linux `ngrok` binary by default. If ngrok is not already available, the build downloads it to `.local-tools/ngrok/ngrok` first, then includes it in the PyInstaller output.
+
+Run it directly:
+
+```bash
+./dist/GPT-Connect
+./dist/GPT-Connect tunnel
+./dist/GPT-Connect schema --server-url https://YOUR-NGROK-DOMAIN.ngrok-free.app
+```
+
+To build without bundling ngrok:
+
+```bash
+./scripts/build-exe.sh --onefile --no-bundle-ngrok
+```
+
 ## GitHub Release Build
 
-The repository includes a GitHub Actions workflow that builds the standalone Windows x64 executable with bundled ngrok and publishes release assets.
+The repository includes a GitHub Actions workflow that builds standalone Windows x64 and Linux x64 executables with bundled ngrok and publishes release assets.
 
 Create a release by pushing a version tag:
 
@@ -299,20 +391,29 @@ git tag v0.1.0
 git push origin v0.1.0
 ```
 
-You can also run **Release Standalone Windows EXE** manually from the GitHub Actions tab. The release contains:
+You can also run **Release Standalone Executables** manually from the GitHub Actions tab. The release contains:
 
 ```text
 GPT-Connect-windows-x64-standalone.exe
 GPT-Connect-windows-x64-standalone.zip
 GPT-Connect-windows-x64-standalone.exe.sha256
 GPT-Connect-windows-x64-standalone.zip.sha256
+GPT-Connect-linux-x64-standalone
+GPT-Connect-linux-x64-standalone.tar.gz
+GPT-Connect-linux-x64-standalone.sha256
+GPT-Connect-linux-x64-standalone.tar.gz.sha256
 ```
 
-The released executable is the one-file PyInstaller build. It includes `ngrok.exe` and starts tunnel mode by default when launched without arguments.
+The released executables are one-file PyInstaller builds. They include ngrok and start tunnel mode by default when launched without arguments.
 
 ## Development
 
 ```powershell
 .\.venv\Scripts\python.exe -m pytest
 .\.venv\Scripts\python.exe .\scripts\export_openapi.py
+```
+
+```bash
+./.venv/bin/python -m pytest
+./.venv/bin/python scripts/export_openapi.py
 ```

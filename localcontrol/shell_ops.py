@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import shutil
 import subprocess
 import threading
 import time
@@ -12,19 +11,10 @@ from .config import get_settings
 from .console import mirror_execution_event
 from .errors import LocalControlError
 from .models import JobCancelResponse, JobResponse, JobStartedResponse, ShellRunRequest, ShellRunResponse
+from .platform_support import shell_command_args
 from .project_ops import project_store
 from .redaction import redact_text
 from .utils import truncate_text, utc_now_iso
-
-
-def _command_args(shell: str, command: str) -> list[str]:
-    if shell == "cmd":
-        exe = shutil.which("cmd.exe") or "cmd.exe"
-        return [exe, "/d", "/s", "/c", command]
-    exe = shutil.which("powershell.exe") or shutil.which("pwsh") or "powershell.exe"
-    if exe.lower().endswith("pwsh"):
-        return [exe, "-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", command]
-    return [exe, "-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", command]
 
 
 def execute_command(payload: ShellRunRequest) -> ShellRunResponse:
@@ -146,12 +136,12 @@ class ShellJobManager:
         cwd = project_store.resolve_path(payload.project_id, payload.cwd, require_path=False)
         if cwd and not cwd.is_dir():
             raise LocalControlError("invalid_cwd", "cwd must be an existing directory.", status_code=400)
-        args = _command_args(payload.shell, payload.command)
+        shell, args = shell_command_args(payload.shell, payload.command)
         mirror_execution_event(
             session_id=job.job_id,
             stream="command",
             text=payload.command if payload.include_secrets else redact_text(payload.command)[0],
-            shell=payload.shell,
+            shell=shell,
             cwd=str(cwd) if cwd else None,
             source="shell",
         )
@@ -190,7 +180,7 @@ class ShellJobManager:
                     session_id=job.job_id,
                     stream=stream_name,
                     text=text,
-                    shell=payload.shell,
+                    shell=shell,
                     cwd=str(cwd) if cwd else None,
                     source="shell",
                 )
@@ -225,7 +215,7 @@ class ShellJobManager:
             session_id=job.job_id,
             stream="system",
             text=f"exit_code={exit_code} timed_out={timed_out} duration_ms={duration_ms}",
-            shell=payload.shell,
+            shell=shell,
             cwd=str(cwd) if cwd else None,
             source="shell",
         )
@@ -234,7 +224,7 @@ class ShellJobManager:
             project_id=payload.project_id,
             command=payload.command,
             cwd=str(cwd) if cwd else None,
-            shell=payload.shell,
+            shell=shell,
             exit_code=exit_code,
             stdout=stdout,
             stderr=stderr,

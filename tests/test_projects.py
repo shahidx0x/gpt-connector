@@ -27,7 +27,7 @@ def test_project_register_list_and_shell_context(client, auth_headers, tmp_path)
     if os.name == "nt":
         payload = {"project_id": "alpha", "shell": "cmd", "command": "cd", "timeout_seconds": 5}
     else:
-        payload = {"project_id": "alpha", "shell": "powershell", "command": "pwd", "timeout_seconds": 5}
+        payload = {"project_id": "alpha", "shell": "bash", "command": "pwd", "timeout_seconds": 5}
     response = client.post("/shell/run", headers=auth_headers, json=payload)
     assert response.status_code == 200
     body = response.json()

@@ -7,7 +7,7 @@ import time
 def _echo_payload(text: str) -> dict:
     if os.name == "nt":
         return {"shell": "cmd", "command": f"echo {text}", "timeout_seconds": 5}
-    return {"shell": "powershell", "command": f"echo {text}", "timeout_seconds": 5}
+    return {"shell": "bash", "command": f"echo {text}", "timeout_seconds": 5}
 
 
 def test_shell_run(client, auth_headers):
@@ -29,17 +29,21 @@ def test_shell_timeout(client, auth_headers):
     if os.name == "nt":
         payload = {"shell": "cmd", "command": "ping -n 3 127.0.0.1 > nul", "timeout_seconds": 0.5}
     else:
-        payload = {"shell": "powershell", "command": "Start-Sleep -Seconds 2", "timeout_seconds": 0.5}
+        payload = {"shell": "bash", "command": "sleep 2", "timeout_seconds": 0.5}
     response = client.post("/shell/run", headers=auth_headers, json=payload)
     assert response.status_code == 200
     assert response.json()["timed_out"] is True
 
 
 def test_full_control_shell_runs_without_approval(client, auth_headers):
+    if os.name == "nt":
+        payload = {"shell": "powershell", "command": "Remove-Item C:\\Temp\\not-real.txt", "timeout_seconds": 5}
+    else:
+        payload = {"shell": "bash", "command": "rm -f /tmp/not-real-gpt-connect.txt", "timeout_seconds": 5}
     response = client.post(
         "/shell/run",
         headers=auth_headers,
-        json={"shell": "powershell", "command": "Remove-Item C:\\Temp\\not-real.txt", "timeout_seconds": 5},
+        json=payload,
     )
     assert response.status_code == 200
     assert response.json()["job_id"]

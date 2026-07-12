@@ -6,8 +6,10 @@ import json
 import os
 import re
 import shutil
+import stat
 import subprocess
 import sys
+import tarfile
 import tempfile
 import time
 import urllib.request
@@ -20,8 +22,8 @@ import uvicorn
 from localcontrol import __version__
 from localcontrol.config import load_dotenv
 from localcontrol.openapi_export import export_schema
+from localcontrol.platform_support import default_ngrok_download_url, ngrok_binary_name
 
-DEFAULT_NGROK_DOWNLOAD_URL = "https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-windows-amd64.zip"
 MAX_NGROK_AUTH_RETRIES = 3
 
 
@@ -66,9 +68,10 @@ def _bundled_ngrok_path() -> Path | None:
         candidate_roots.extend([exe_dir, exe_dir / "_internal"])
 
     for root in candidate_roots:
-        candidate = root / "ngrok.exe"
-        if candidate.exists():
-            return candidate
+        for name in (ngrok_binary_name(), "ngrok.exe", "ngrok"):
+            candidate = root / name
+            if candidate.exists():
+                return candidate
     return None
 
 
@@ -103,18 +106,33 @@ def _is_windows_app_alias(path: str | None) -> bool:
 def _install_ngrok(download_url: str, install_dir: Path) -> Path:
     install_dir.mkdir(parents=True, exist_ok=True)
     temp_root = Path(tempfile.mkdtemp(prefix="localcontrol-ngrok-"))
-    zip_path = temp_root / "ngrok.zip"
+    archive_path = temp_root / "ngrok-download"
+    binary_name = ngrok_binary_name()
     try:
-        print("ngrok not found. Downloading ngrok for Windows...")
+        print("ngrok not found. Downloading ngrok...")
         print(f"Source: {download_url}")
-        urllib.request.urlretrieve(download_url, zip_path)
-        with zipfile.ZipFile(zip_path) as archive:
-            archive.extractall(temp_root)
-        downloaded = next(temp_root.rglob("ngrok.exe"), None)
+        urllib.request.urlretrieve(download_url, archive_path)
+        if zipfile.is_zipfile(archive_path):
+            with zipfile.ZipFile(archive_path) as archive:
+                archive.extractall(temp_root)
+        else:
+            with tarfile.open(archive_path, "r:*") as archive:
+                for member in archive.getmembers():
+                    if Path(member.name).name != binary_name:
+                        continue
+                    source = archive.extractfile(member)
+                    if source is None:
+                        continue
+                    extracted = temp_root / binary_name
+                    extracted.write_bytes(source.read())
+                    break
+        downloaded = next(temp_root.rglob(binary_name), None)
         if not downloaded:
-            raise RuntimeError("Downloaded ngrok archive did not contain ngrok.exe.")
-        local_exe = install_dir / "ngrok.exe"
+            raise RuntimeError(f"Downloaded ngrok archive did not contain {binary_name}.")
+        local_exe = install_dir / binary_name
         shutil.copy2(downloaded, local_exe)
+        if os.name != "nt":
+            local_exe.chmod(local_exe.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
         print(f"Installed local ngrok: {local_exe}")
         return local_exe
     finally:
@@ -130,7 +148,7 @@ def _clean_ngrok_authtoken(token: str) -> str:
 
 def _resolve_ngrok_executable(requested: str, download_url: str, no_auto_install: bool) -> Path:
     install_dir = Path.cwd() / ".local-tools" / "ngrok"
-    local_exe = install_dir / "ngrok.exe"
+    local_exe = install_dir / ngrok_binary_name()
 
     if requested and requested != "ngrok":
         found = shutil.which(requested)
@@ -339,7 +357,7 @@ def tunnel_command(args: argparse.Namespace) -> int:
     domain = args.ngrok_domain or os.getenv("LOCALCONTROL_NGROK_DOMAIN")
     if domain and not public_url:
         public_url = f"https://{domain}"
-    download_url = args.ngrok_download_url or os.getenv("LOCALCONTROL_NGROK_DOWNLOAD_URL") or DEFAULT_NGROK_DOWNLOAD_URL
+    download_url = args.ngrok_download_url or os.getenv("LOCALCONTROL_NGROK_DOWNLOAD_URL") or default_ngrok_download_url()
     ngrok_exe = args.ngrok_exe or os.getenv("LOCALCONTROL_NGROK_EXE") or "ngrok"
     ngrok_api_port = args.ngrok_api_port or _env_int("LOCALCONTROL_NGROK_API_PORT", 4040)
     timeout_seconds = args.ngrok_url_timeout_seconds or _env_int("LOCALCONTROL_NGROK_URL_TIMEOUT_SECONDS", 180)
@@ -356,8 +374,10 @@ def tunnel_command(args: argparse.Namespace) -> int:
     ngrok_process: subprocess.Popen | None = None
     try:
         print("Starting GPT-Connect API...")
-        creationflags = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
-        api_process = subprocess.Popen(api_cmd, cwd=Path.cwd(), creationflags=creationflags)
+        popen_kwargs = {"cwd": Path.cwd()}
+        if os.name == "nt":
+            popen_kwargs["creationflags"] = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+        api_process = subprocess.Popen(api_cmd, **popen_kwargs)
         _wait_health(f"{local_base_url}/health", api_process)
 
         ngrok_args = [str(ngrok_path), "http"]
@@ -441,7 +461,7 @@ def launch_command(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="GPT-Connect", description="Windows GPT-Connect Bridge")
+    parser = argparse.ArgumentParser(prog="GPT-Connect", description="Local GPT-Connect Bridge")
     parser.add_argument("--version", action="version", version=f"GPT-Connect {__version__}")
     subparsers = parser.add_subparsers(dest="command")
 

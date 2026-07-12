@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import shutil
 import subprocess
 import threading
 import time
@@ -23,16 +22,10 @@ from .models import (
     TerminalStdinResponse,
     TerminalTerminateResponse,
 )
+from .platform_support import shell_session_args
 from .project_ops import project_store
 from .redaction import redact_text
 from .utils import utc_now_iso
-
-
-def _shell_args(shell: str) -> list[str]:
-    if shell == "cmd":
-        return [shutil.which("cmd.exe") or "cmd.exe", "/Q", "/D", "/K"]
-    exe = shutil.which("powershell.exe") or shutil.which("pwsh") or "powershell.exe"
-    return [exe, "-NoLogo", "-NoProfile", "-NoExit", "-ExecutionPolicy", "Bypass", "-Command", "-"]
 
 
 @dataclass
@@ -78,9 +71,10 @@ class TerminalSessionManager:
             raise LocalControlError("invalid_cwd", "cwd must be an existing directory.", status_code=400)
         env = os.environ.copy()
         env.update(payload.env)
+        shell, args = shell_session_args(payload.shell)
         try:
             process = subprocess.Popen(
-                _shell_args(payload.shell),
+                args,
                 cwd=str(cwd_path) if cwd_path else None,
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
@@ -96,7 +90,7 @@ class TerminalSessionManager:
 
         session = _TerminalSession(
             session_id=str(uuid.uuid4()),
-            shell=payload.shell,
+            shell=shell,
             project_id=payload.project_id,
             cwd=str(cwd_path) if cwd_path else None,
             name=payload.name,

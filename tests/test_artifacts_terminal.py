@@ -4,7 +4,10 @@ import base64
 import os
 import time
 
-import pytest
+def _terminal_payload(tmp_path):
+    if os.name == "nt":
+        return {"shell": "cmd", "cwd": str(tmp_path), "name": "pytest-cmd"}
+    return {"shell": "bash", "cwd": str(tmp_path), "name": "pytest-bash"}
 
 
 def test_text_artifact_write_download_and_delete(client, auth_headers, tmp_path):
@@ -61,12 +64,11 @@ def test_artifact_upload_and_overwrite_runs_without_approval(client, auth_header
     assert target.read_bytes() == b"new-bytes"
 
 
-@pytest.mark.skipif(os.name != "nt", reason="terminal sessions target Windows shells")
 def test_terminal_session_exec_and_poll_events(client, auth_headers, tmp_path):
     response = client.post(
         "/terminal/sessions",
         headers=auth_headers,
-        json={"shell": "cmd", "cwd": str(tmp_path), "name": "pytest-cmd"},
+        json=_terminal_payload(tmp_path),
     )
     assert response.status_code == 200
     session_id = response.json()["session_id"]
@@ -104,12 +106,11 @@ def test_terminal_session_exec_and_poll_events(client, auth_headers, tmp_path):
     assert response.json()["status"] == "terminated"
 
 
-@pytest.mark.skipif(os.name != "nt", reason="terminal sessions target Windows shells")
 def test_full_control_terminal_exec_runs_without_approval(client, auth_headers, tmp_path):
     response = client.post(
         "/terminal/sessions",
         headers=auth_headers,
-        json={"shell": "cmd", "cwd": str(tmp_path)},
+        json=_terminal_payload(tmp_path),
     )
     assert response.status_code == 200
     session_id = response.json()["session_id"]
@@ -117,7 +118,7 @@ def test_full_control_terminal_exec_runs_without_approval(client, auth_headers, 
     response = client.post(
         f"/terminal/sessions/{session_id}/exec",
         headers=auth_headers,
-        json={"command": "del C:\\Temp\\not-real-localcontrol.txt"},
+        json={"command": "del C:\\Temp\\not-real-localcontrol.txt" if os.name == "nt" else "rm -f /tmp/not-real-gpt-connect.txt"},
     )
     assert response.status_code == 200
     assert response.json()["command_id"]

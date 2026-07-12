@@ -40,8 +40,8 @@ def test_git_runs_through_shell_with_project_context(client, auth_headers, tmp_p
     )
     assert response.status_code == 200
 
-    command = "git status --short" if os.name == "nt" else "git status --short"
-    shell = "cmd" if os.name == "nt" else "powershell"
+    command = "git status --short"
+    shell = "cmd" if os.name == "nt" else "bash"
     response = client.post(
         "/shell/run",
         headers=auth_headers,

@@ -76,9 +76,9 @@ def _prune_unused_components(schema: dict) -> None:
 def build_schema(server_url: str) -> dict:
     schema = deepcopy(app.openapi())
     schema["servers"] = [{"url": server_url}]
-    schema["info"]["title"] = "Windows GPT-Connect Actions"
+    schema["info"]["title"] = "GPT-Connect Actions"
     schema["info"]["description"] = (
-        "Private Custom GPT action schema for a single-user Windows GPT-Connect bridge. "
+        "Private Custom GPT action schema for a single-user GPT-Connect bridge. "
         "Full-control execution mode is enabled; use /execution/logs to retrieve command and terminal output."
     )
 

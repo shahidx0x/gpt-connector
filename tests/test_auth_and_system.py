@@ -22,13 +22,15 @@ def test_openapi_is_protected_and_available(client, auth_headers):
     schema = response.json()
     assert "/fs/read" in schema["paths"]
     assert "/shell/run" in schema["paths"]
+    shell_enum = schema["components"]["schemas"]["ShellRunRequest"]["properties"]["shell"]["enum"]
+    assert {"auto", "bash", "sh", "powershell", "cmd"}.issubset(shell_enum)
 
 
 def test_gpt_actions_yaml_is_public(client):
     response = client.get("/gpt-actions.openapi.yaml")
     assert response.status_code == 200
     assert "application/yaml" in response.headers["content-type"]
-    assert b"Windows GPT-Connect Actions" in response.content
+    assert b"GPT-Connect Actions" in response.content
 
 
 def test_curated_gpt_schema_stays_under_30_operations():

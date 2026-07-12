@@ -276,7 +276,7 @@ class ShellRunRequest(StrictModel):
     command: str = Field(min_length=1)
     project_id: str | None = None
     cwd: str | None = None
-    shell: Literal["powershell", "cmd"] = "powershell"
+    shell: Literal["auto", "powershell", "cmd", "bash", "sh"] = "auto"
     timeout_seconds: float = Field(default=10, ge=0.1, le=300)
     max_output_bytes: int = Field(default=65536, ge=1024, le=1_048_576)
     async_job: bool = False
@@ -300,7 +300,7 @@ class ShellRunResponse(StrictModel):
 
 
 class TerminalSessionCreateRequest(StrictModel):
-    shell: Literal["powershell", "cmd"] = "powershell"
+    shell: Literal["auto", "powershell", "cmd", "bash", "sh"] = "auto"
     project_id: str | None = None
     cwd: str | None = None
     name: str | None = None
