@@ -4,7 +4,9 @@ GPT-Connect is a local bridge that lets ChatGPT or a Custom GPT control your own
 
 Its main purpose is to avoid the Codex local-machine limit: the model can reason about work, but it cannot directly access your running device, local projects, terminals, files, processes, or command output. GPT-Connect runs on the device and gives the GPT that missing local execution and context.
 
-It is like an OpenClaw-style local control layer, but without a hosted command server. Each device runs its own bridge. If you start it as Administrator or root, it can see and control anything that privileged OS account can access.
+It is like an OpenClaw-style local control layer, but without a hosted command server. Each device runs its own bridge.
+
+> **Privilege note:** If you start GPT-Connect as **Administrator** or **root**, it can see and control anything that privileged OS account can access.
 
 ## Install
 
@@ -179,5 +181,5 @@ Use it to change the API key, port, ngrok token, tunnel settings, and terminal s
 - Requires bearer authentication.
 - Public access should go through HTTPS tunnel or reverse proxy.
 - Commands run with the same permissions as the account that started GPT-Connect.
-- If started as Administrator/root, GPT-Connect can access and control anything that privileged OS account can access.
+- **Administrator/root mode gives full privileged OS access:** GPT-Connect can see and control anything that account can access.
 - Treat the API key like a password.
