@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "windows-localcontrol"
+version = "0.1.0"
+description = "Private FastAPI bridge for controlling a Windows machine from a Custom GPT action."
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.116",
+    "uvicorn[standard]>=0.35",
+    "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "httpx>=0.28",
+    "pytest>=8.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["localcontrol*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+

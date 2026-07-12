@@ -1,0 +1,3233 @@
+openapi: 3.1.0
+info:
+  title: Windows LocalControl GPT Actions
+  description: Private Custom GPT action schema for a single-user Windows LocalControl
+    bridge. Approving or denying risky operations is intentionally omitted; use the
+    local approval key outside ChatGPT.
+  version: 0.1.0
+paths:
+  /fs/list:
+    post:
+      tags:
+      - filesystem
+      summary: Fs List
+      operationId: fs_list
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FsListRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FsListResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /fs/read:
+    post:
+      tags:
+      - filesystem
+      summary: Fs Read
+      operationId: fs_read
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FsReadRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FsReadResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /fs/write:
+    post:
+      tags:
+      - filesystem
+      summary: Fs Write
+      operationId: fs_write
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FsWriteRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FsWriteResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /fs/replace:
+    post:
+      tags:
+      - filesystem
+      summary: Fs Replace
+      operationId: fs_replace
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FsReplaceRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FsReplaceResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /fs/delete:
+    post:
+      tags:
+      - filesystem
+      summary: Fs Delete
+      operationId: fs_delete
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FsDeleteRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FsDeleteResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /fs/stat:
+    post:
+      tags:
+      - filesystem
+      summary: Fs Stat
+      operationId: fs_stat
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FsStatRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FsStatResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /artifacts/create_text:
+    post:
+      tags:
+      - artifacts
+      summary: Artifacts Create Text
+      operationId: artifacts_create_text
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArtifactCreateTextRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtifactInfo'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /artifacts/upload_base64:
+    post:
+      tags:
+      - artifacts
+      summary: Artifacts Upload Base64
+      operationId: artifacts_upload_base64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArtifactUploadBase64Request'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtifactInfo'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /artifacts/fetch_url:
+    post:
+      tags:
+      - artifacts
+      summary: Artifacts Fetch Url
+      operationId: artifacts_fetch_url
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArtifactFetchUrlRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtifactInfo'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /artifacts/from_path:
+    post:
+      tags:
+      - artifacts
+      summary: Artifacts From Path
+      operationId: artifacts_from_path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArtifactFromPathRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtifactInfo'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /artifacts/list:
+    post:
+      tags:
+      - artifacts
+      summary: Artifacts List
+      operationId: artifacts_list
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArtifactListRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtifactListResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /artifacts/{artifact_id}:
+    get:
+      tags:
+      - artifacts
+      summary: Artifacts Get
+      operationId: artifacts_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: artifact_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Artifact Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtifactInfo'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Conflict
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /artifacts/{artifact_id}/download:
+    get:
+      tags:
+      - artifacts
+      summary: Artifacts Download
+      operationId: artifacts_download
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: artifact_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Artifact Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Conflict
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /artifacts/{artifact_id}/write_to_path:
+    post:
+      tags:
+      - artifacts
+      summary: Artifacts Write To Path
+      operationId: artifacts_write_to_path
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: artifact_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Artifact Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArtifactWriteToPathRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtifactInfo'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Conflict
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /artifacts/{artifact_id}/delete:
+    post:
+      tags:
+      - artifacts
+      summary: Artifacts Delete
+      operationId: artifacts_delete
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: artifact_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Artifact Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArtifactDeleteRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtifactDeleteResponse'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Conflict
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /search/files:
+    post:
+      tags:
+      - search
+      summary: Search Files Endpoint
+      operationId: search_files
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchFilesRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchFilesResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /search/content:
+    post:
+      tags:
+      - search
+      summary: Search Content Endpoint
+      operationId: search_content
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchContentRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchContentResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /shell/run:
+    post:
+      tags:
+      - shell
+      summary: Shell Run
+      operationId: shell_run
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShellRunRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ShellRunResponse'
+                - $ref: '#/components/schemas/JobStartedResponse'
+                title: Response Shell Run
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /terminal/sessions:
+    post:
+      tags:
+      - terminal
+      summary: Terminal Create Session
+      operationId: terminal_create_session
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TerminalSessionCreateRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TerminalSessionInfo'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /terminal/sessions/list:
+    post:
+      tags:
+      - terminal
+      summary: Terminal List Sessions
+      operationId: terminal_list_sessions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TerminalSessionListRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TerminalSessionListResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /terminal/sessions/{session_id}:
+    get:
+      tags:
+      - terminal
+      summary: Terminal Get Session
+      operationId: terminal_get_session
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: session_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Session Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TerminalSessionInfo'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Conflict
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /terminal/sessions/{session_id}/exec:
+    post:
+      tags:
+      - terminal
+      summary: Terminal Exec
+      operationId: terminal_exec
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: session_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Session Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TerminalExecRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TerminalExecResponse'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Conflict
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /terminal/sessions/{session_id}/stdin:
+    post:
+      tags:
+      - terminal
+      summary: Terminal Stdin
+      operationId: terminal_stdin
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: session_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Session Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TerminalStdinRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TerminalStdinResponse'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Conflict
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /terminal/sessions/{session_id}/events:
+    post:
+      tags:
+      - terminal
+      summary: Terminal Events
+      operationId: terminal_events
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: session_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Session Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TerminalEventsRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TerminalEventsResponse'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Conflict
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /terminal/sessions/{session_id}/terminate:
+    post:
+      tags:
+      - terminal
+      summary: Terminal Terminate
+      operationId: terminal_terminate
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: session_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Session Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TerminalTerminateResponse'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Conflict
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /system/info:
+    get:
+      tags:
+      - system
+      summary: System Info Endpoint
+      operationId: system_info
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemInfoResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+      - HTTPBearer: []
+  /git/status:
+    post:
+      tags:
+      - git
+      summary: Git Status Endpoint
+      operationId: git_status
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GitStatusRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GitStatusResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /git/diff:
+    post:
+      tags:
+      - git
+      summary: Git Diff Endpoint
+      operationId: git_diff
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GitDiffRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GitDiffResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /git/add:
+    post:
+      tags:
+      - git
+      summary: Git Add Endpoint
+      operationId: git_add
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GitAddRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GitAddResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /git/commit:
+    post:
+      tags:
+      - git
+      summary: Git Commit Endpoint
+      operationId: git_commit
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GitCommitRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GitCommitResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+components:
+  schemas:
+    ApprovalDecisionRequest:
+      properties:
+        note:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Note
+      additionalProperties: false
+      type: object
+      title: ApprovalDecisionRequest
+    ApprovalRecordModel:
+      properties:
+        id:
+          type: string
+          title: Id
+        action:
+          type: string
+          title: Action
+        reason:
+          type: string
+          title: Reason
+        risk:
+          $ref: '#/components/schemas/RiskLevel'
+        status:
+          $ref: '#/components/schemas/ApprovalStatus'
+        created_at:
+          type: string
+          title: Created At
+        approved_at:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Approved At
+        denied_at:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Denied At
+        consumed_at:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Consumed At
+        note:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Note
+        payload_summary:
+          additionalProperties: true
+          type: object
+          title: Payload Summary
+      additionalProperties: false
+      type: object
+      required:
+      - id
+      - action
+      - reason
+      - risk
+      - status
+      - created_at
+      title: ApprovalRecordModel
+    ApprovalRequest:
+      properties:
+        action:
+          type: string
+          minLength: 1
+          title: Action
+        reason:
+          type: string
+          minLength: 1
+          title: Reason
+        risk:
+          $ref: '#/components/schemas/RiskLevel'
+          default: high
+        payload:
+          additionalProperties: true
+          type: object
+          title: Payload
+      additionalProperties: false
+      type: object
+      required:
+      - action
+      - reason
+      title: ApprovalRequest
+    ApprovalStatus:
+      type: string
+      enum:
+      - pending
+      - approved
+      - denied
+      - consumed
+      title: ApprovalStatus
+    ArtifactCreateTextRequest:
+      properties:
+        name:
+          type: string
+          title: Name
+        content:
+          type: string
+          title: Content
+        mime_type:
+          type: string
+          title: Mime Type
+          default: text/plain
+        encoding:
+          type: string
+          title: Encoding
+          default: utf-8
+      additionalProperties: false
+      type: object
+      required:
+      - name
+      - content
+      title: ArtifactCreateTextRequest
+    ArtifactDeleteRequest:
+      properties:
+        approval_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Approval Id
+      additionalProperties: false
+      type: object
+      title: ArtifactDeleteRequest
+    ArtifactDeleteResponse:
+      properties:
+        artifact_id:
+          type: string
+          title: Artifact Id
+        deleted:
+          type: boolean
+          title: Deleted
+        removed_file:
+          type: boolean
+          title: Removed File
+      additionalProperties: false
+      type: object
+      required:
+      - artifact_id
+      - deleted
+      - removed_file
+      title: ArtifactDeleteResponse
+    ArtifactFetchUrlRequest:
+      properties:
+        url:
+          type: string
+          title: Url
+        name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Name
+        approval_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Approval Id
+      additionalProperties: false
+      type: object
+      required:
+      - url
+      title: ArtifactFetchUrlRequest
+    ArtifactFromPathRequest:
+      properties:
+        path:
+          type: string
+          title: Path
+        copy:
+          type: boolean
+          title: Copy
+          default: false
+        name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Name
+        approval_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Approval Id
+      additionalProperties: false
+      type: object
+      required:
+      - path
+      title: ArtifactFromPathRequest
+    ArtifactInfo:
+      properties:
+        artifact_id:
+          type: string
+          title: Artifact Id
+        name:
+          type: string
+          title: Name
+        size:
+          type: integer
+          title: Size
+        mime_type:
+          type: string
+          title: Mime Type
+        sha256:
+          type: string
+          title: Sha256
+        created_at:
+          type: string
+          title: Created At
+        source:
+          type: string
+          title: Source
+        local_path:
+          type: string
+          title: Local Path
+        managed:
+          type: boolean
+          title: Managed
+      additionalProperties: false
+      type: object
+      required:
+      - artifact_id
+      - name
+      - size
+      - mime_type
+      - sha256
+      - created_at
+      - source
+      - local_path
+      - managed
+      title: ArtifactInfo
+    ArtifactListRequest:
+      properties:
+        max_results:
+          type: integer
+          maximum: 1000.0
+          minimum: 1.0
+          title: Max Results
+          default: 100
+      additionalProperties: false
+      type: object
+      title: ArtifactListRequest
+    ArtifactListResponse:
+      properties:
+        artifacts:
+          items:
+            $ref: '#/components/schemas/ArtifactInfo'
+          type: array
+          title: Artifacts
+      additionalProperties: false
+      type: object
+      required:
+      - artifacts
+      title: ArtifactListResponse
+    ArtifactUploadBase64Request:
+      properties:
+        name:
+          type: string
+          title: Name
+        content_base64:
+          type: string
+          title: Content Base64
+        mime_type:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Mime Type
+      additionalProperties: false
+      type: object
+      required:
+      - name
+      - content_base64
+      title: ArtifactUploadBase64Request
+    ArtifactWriteToPathRequest:
+      properties:
+        path:
+          type: string
+          title: Path
+        overwrite:
+          type: boolean
+          title: Overwrite
+          default: false
+        create_parents:
+          type: boolean
+          title: Create Parents
+          default: true
+        approval_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Approval Id
+      additionalProperties: false
+      type: object
+      required:
+      - path
+      title: ArtifactWriteToPathRequest
+    ContentMatch:
+      properties:
+        path:
+          type: string
+          title: Path
+        line_number:
+          type: integer
+          title: Line Number
+        line:
+          type: string
+          title: Line
+        redactions:
+          type: integer
+          title: Redactions
+      additionalProperties: false
+      type: object
+      required:
+      - path
+      - line_number
+      - line
+      - redactions
+      title: ContentMatch
+    ErrorResponse:
+      properties:
+        ok:
+          type: boolean
+          title: Ok
+          default: false
+        code:
+          type: string
+          title: Code
+        message:
+          type: string
+          title: Message
+        details:
+          additionalProperties: true
+          type: object
+          title: Details
+      additionalProperties: false
+      type: object
+      required:
+      - code
+      - message
+      title: ErrorResponse
+    FileInfo:
+      properties:
+        path:
+          type: string
+          title: Path
+        name:
+          type: string
+          title: Name
+        is_dir:
+          type: boolean
+          title: Is Dir
+        size:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Size
+        modified_at:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Modified At
+      additionalProperties: false
+      type: object
+      required:
+      - path
+      - name
+      - is_dir
+      title: FileInfo
+    FsDeleteRequest:
+      properties:
+        path:
+          type: string
+          title: Path
+        recursive:
+          type: boolean
+          title: Recursive
+          default: false
+        permanent:
+          type: boolean
+          title: Permanent
+          default: false
+        approval_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Approval Id
+      additionalProperties: false
+      type: object
+      required:
+      - path
+      title: FsDeleteRequest
+    FsDeleteResponse:
+      properties:
+        path:
+          type: string
+          title: Path
+        permanent:
+          type: boolean
+          title: Permanent
+        quarantined_path:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Quarantined Path
+      additionalProperties: false
+      type: object
+      required:
+      - path
+      - permanent
+      title: FsDeleteResponse
+    FsListRequest:
+      properties:
+        path:
+          type: string
+          title: Path
+        recursive:
+          type: boolean
+          title: Recursive
+          default: false
+        include_hidden:
+          type: boolean
+          title: Include Hidden
+          default: false
+        max_entries:
+          type: integer
+          maximum: 5000.0
+          minimum: 1.0
+          title: Max Entries
+          default: 200
+      additionalProperties: false
+      type: object
+      required:
+      - path
+      title: FsListRequest
+    FsListResponse:
+      properties:
+        path:
+          type: string
+          title: Path
+        entries:
+          items:
+            $ref: '#/components/schemas/FileInfo'
+          type: array
+          title: Entries
+        truncated:
+          type: boolean
+          title: Truncated
+      additionalProperties: false
+      type: object
+      required:
+      - path
+      - entries
+      - truncated
+      title: FsListResponse
+    FsReadRequest:
+      properties:
+        path:
+          type: string
+          title: Path
+        encoding:
+          type: string
+          title: Encoding
+          default: utf-8
+        max_bytes:
+          type: integer
+          maximum: 10485760.0
+          minimum: 1.0
+          title: Max Bytes
+          default: 65536
+        include_secrets:
+          type: boolean
+          title: Include Secrets
+          default: false
+        approval_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Approval Id
+      additionalProperties: false
+      type: object
+      required:
+      - path
+      title: FsReadRequest
+    FsReadResponse:
+      properties:
+        path:
+          type: string
+          title: Path
+        content:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Content
+        content_base64:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Content Base64
+        encoding:
+          type: string
+          title: Encoding
+        binary:
+          type: boolean
+          title: Binary
+        bytes_read:
+          type: integer
+          title: Bytes Read
+        truncated:
+          type: boolean
+          title: Truncated
+        redactions:
+          type: integer
+          title: Redactions
+      additionalProperties: false
+      type: object
+      required:
+      - path
+      - encoding
+      - binary
+      - bytes_read
+      - truncated
+      - redactions
+      title: FsReadResponse
+    FsReplaceRequest:
+      properties:
+        path:
+          type: string
+          title: Path
+        old:
+          type: string
+          title: Old
+        new:
+          type: string
+          title: New
+        count:
+          type: integer
+          minimum: 0.0
+          title: Count
+          description: 0 means replace every occurrence.
+          default: 0
+        encoding:
+          type: string
+          title: Encoding
+          default: utf-8
+        create_backup:
+          type: boolean
+          title: Create Backup
+          default: true
+        approval_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Approval Id
+      additionalProperties: false
+      type: object
+      required:
+      - path
+      - old
+      - new
+      title: FsReplaceRequest
+    FsReplaceResponse:
+      properties:
+        path:
+          type: string
+          title: Path
+        replacements:
+          type: integer
+          title: Replacements
+        backup_path:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Backup Path
+        file:
+          $ref: '#/components/schemas/FileInfo'
+      additionalProperties: false
+      type: object
+      required:
+      - path
+      - replacements
+      - backup_path
+      - file
+      title: FsReplaceResponse
+    FsStatRequest:
+      properties:
+        path:
+          type: string
+          title: Path
+      additionalProperties: false
+      type: object
+      required:
+      - path
+      title: FsStatRequest
+    FsStatResponse:
+      properties:
+        file:
+          $ref: '#/components/schemas/FileInfo'
+        exists:
+          type: boolean
+          title: Exists
+      additionalProperties: false
+      type: object
+      required:
+      - file
+      - exists
+      title: FsStatResponse
+    FsWriteRequest:
+      properties:
+        path:
+          type: string
+          title: Path
+        content:
+          type: string
+          title: Content
+        encoding:
+          type: string
+          title: Encoding
+          default: utf-8
+        create_parents:
+          type: boolean
+          title: Create Parents
+          default: true
+        overwrite:
+          type: boolean
+          title: Overwrite
+          default: false
+        append:
+          type: boolean
+          title: Append
+          default: false
+        approval_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Approval Id
+      additionalProperties: false
+      type: object
+      required:
+      - path
+      - content
+      title: FsWriteRequest
+    FsWriteResponse:
+      properties:
+        path:
+          type: string
+          title: Path
+        bytes_written:
+          type: integer
+          title: Bytes Written
+        mode:
+          type: string
+          enum:
+          - created
+          - overwritten
+          - appended
+          title: Mode
+        file:
+          $ref: '#/components/schemas/FileInfo'
+      additionalProperties: false
+      type: object
+      required:
+      - path
+      - bytes_written
+      - mode
+      - file
+      title: FsWriteResponse
+    GitAddRequest:
+      properties:
+        repo_path:
+          type: string
+          title: Repo Path
+        paths:
+          items:
+            type: string
+          type: array
+          title: Paths
+        all:
+          type: boolean
+          title: All
+          default: false
+      additionalProperties: false
+      type: object
+      required:
+      - repo_path
+      title: GitAddRequest
+    GitAddResponse:
+      properties:
+        repo_root:
+          type: string
+          title: Repo Root
+        staged_paths:
+          items:
+            type: string
+          type: array
+          title: Staged Paths
+        stdout:
+          type: string
+          title: Stdout
+        stderr:
+          type: string
+          title: Stderr
+      additionalProperties: false
+      type: object
+      required:
+      - repo_root
+      - staged_paths
+      - stdout
+      - stderr
+      title: GitAddResponse
+    GitBranchEntry:
+      properties:
+        name:
+          type: string
+          title: Name
+        current:
+          type: boolean
+          title: Current
+        upstream:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Upstream
+      additionalProperties: false
+      type: object
+      required:
+      - name
+      - current
+      title: GitBranchEntry
+    GitBranchesRequest:
+      properties:
+        repo_path:
+          type: string
+          title: Repo Path
+      additionalProperties: false
+      type: object
+      required:
+      - repo_path
+      title: GitBranchesRequest
+    GitBranchesResponse:
+      properties:
+        repo_root:
+          type: string
+          title: Repo Root
+        current_branch:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Current Branch
+        branches:
+          items:
+            $ref: '#/components/schemas/GitBranchEntry'
+          type: array
+          title: Branches
+      additionalProperties: false
+      type: object
+      required:
+      - repo_root
+      - branches
+      title: GitBranchesResponse
+    GitCheckoutRequest:
+      properties:
+        repo_path:
+          type: string
+          title: Repo Path
+        ref:
+          type: string
+          minLength: 1
+          title: Ref
+        create_branch:
+          type: boolean
+          title: Create Branch
+          default: false
+        start_point:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Start Point
+      additionalProperties: false
+      type: object
+      required:
+      - repo_path
+      - ref
+      title: GitCheckoutRequest
+    GitCheckoutResponse:
+      properties:
+        repo_root:
+          type: string
+          title: Repo Root
+        branch:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Branch
+        detached:
+          type: boolean
+          title: Detached
+      additionalProperties: false
+      type: object
+      required:
+      - repo_root
+      - branch
+      - detached
+      title: GitCheckoutResponse
+    GitCommitRequest:
+      properties:
+        repo_path:
+          type: string
+          title: Repo Path
+        message:
+          type: string
+          minLength: 1
+          title: Message
+        amend:
+          type: boolean
+          title: Amend
+          default: false
+      additionalProperties: false
+      type: object
+      required:
+      - repo_path
+      - message
+      title: GitCommitRequest
+    GitCommitResponse:
+      properties:
+        repo_root:
+          type: string
+          title: Repo Root
+        commit:
+          type: string
+          title: Commit
+        short_commit:
+          type: string
+          title: Short Commit
+        subject:
+          type: string
+          title: Subject
+      additionalProperties: false
+      type: object
+      required:
+      - repo_root
+      - commit
+      - short_commit
+      - subject
+      title: GitCommitResponse
+    GitDiffRequest:
+      properties:
+        repo_path:
+          type: string
+          title: Repo Path
+        ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Ref
+        cached:
+          type: boolean
+          title: Cached
+          default: false
+        paths:
+          items:
+            type: string
+          type: array
+          title: Paths
+        max_bytes:
+          type: integer
+          maximum: 1048576.0
+          minimum: 1024.0
+          title: Max Bytes
+          default: 65536
+      additionalProperties: false
+      type: object
+      required:
+      - repo_path
+      title: GitDiffRequest
+    GitDiffResponse:
+      properties:
+        repo_root:
+          type: string
+          title: Repo Root
+        diff:
+          type: string
+          title: Diff
+        truncated:
+          type: boolean
+          title: Truncated
+      additionalProperties: false
+      type: object
+      required:
+      - repo_root
+      - diff
+      - truncated
+      title: GitDiffResponse
+    GitFileStatus:
+      properties:
+        path:
+          type: string
+          title: Path
+        index_status:
+          type: string
+          title: Index Status
+        worktree_status:
+          type: string
+          title: Worktree Status
+        renamed_from:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Renamed From
+      additionalProperties: false
+      type: object
+      required:
+      - path
+      - index_status
+      - worktree_status
+      title: GitFileStatus
+    GitLogEntry:
+      properties:
+        commit:
+          type: string
+          title: Commit
+        short_commit:
+          type: string
+          title: Short Commit
+        author:
+          type: string
+          title: Author
+        committed_at:
+          type: string
+          title: Committed At
+        subject:
+          type: string
+          title: Subject
+      additionalProperties: false
+      type: object
+      required:
+      - commit
+      - short_commit
+      - author
+      - committed_at
+      - subject
+      title: GitLogEntry
+    GitLogRequest:
+      properties:
+        repo_path:
+          type: string
+          title: Repo Path
+        ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Ref
+        max_count:
+          type: integer
+          maximum: 200.0
+          minimum: 1.0
+          title: Max Count
+          default: 20
+      additionalProperties: false
+      type: object
+      required:
+      - repo_path
+      title: GitLogRequest
+    GitLogResponse:
+      properties:
+        repo_root:
+          type: string
+          title: Repo Root
+        entries:
+          items:
+            $ref: '#/components/schemas/GitLogEntry'
+          type: array
+          title: Entries
+      additionalProperties: false
+      type: object
+      required:
+      - repo_root
+      - entries
+      title: GitLogResponse
+    GitResetMode:
+      type: string
+      enum:
+      - soft
+      - mixed
+      - hard
+      title: GitResetMode
+    GitResetRequest:
+      properties:
+        repo_path:
+          type: string
+          title: Repo Path
+        ref:
+          type: string
+          title: Ref
+          default: HEAD~1
+        mode:
+          $ref: '#/components/schemas/GitResetMode'
+          default: mixed
+        approval_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Approval Id
+      additionalProperties: false
+      type: object
+      required:
+      - repo_path
+      title: GitResetRequest
+    GitResetResponse:
+      properties:
+        repo_root:
+          type: string
+          title: Repo Root
+        head:
+          type: string
+          title: Head
+        short_head:
+          type: string
+          title: Short Head
+        subject:
+          type: string
+          title: Subject
+      additionalProperties: false
+      type: object
+      required:
+      - repo_root
+      - head
+      - short_head
+      - subject
+      title: GitResetResponse
+    GitStatusRequest:
+      properties:
+        repo_path:
+          type: string
+          title: Repo Path
+      additionalProperties: false
+      type: object
+      required:
+      - repo_path
+      title: GitStatusRequest
+    GitStatusResponse:
+      properties:
+        repo_root:
+          type: string
+          title: Repo Root
+        branch:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Branch
+        upstream:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Upstream
+        ahead:
+          type: integer
+          title: Ahead
+          default: 0
+        behind:
+          type: integer
+          title: Behind
+          default: 0
+        detached:
+          type: boolean
+          title: Detached
+          default: false
+        clean:
+          type: boolean
+          title: Clean
+        files:
+          items:
+            $ref: '#/components/schemas/GitFileStatus'
+          type: array
+          title: Files
+      additionalProperties: false
+      type: object
+      required:
+      - repo_root
+      - branch
+      - clean
+      - files
+      title: GitStatusResponse
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    HealthResponse:
+      properties:
+        ok:
+          type: boolean
+          title: Ok
+        auth_configured:
+          type: boolean
+          title: Auth Configured
+        approval_configured:
+          type: boolean
+          title: Approval Configured
+        allow_all:
+          type: boolean
+          title: Allow All
+        version:
+          type: string
+          title: Version
+      additionalProperties: false
+      type: object
+      required:
+      - ok
+      - auth_configured
+      - approval_configured
+      - allow_all
+      - version
+      title: HealthResponse
+    JobCancelResponse:
+      properties:
+        job_id:
+          type: string
+          title: Job Id
+        status:
+          type: string
+          title: Status
+        message:
+          type: string
+          title: Message
+      additionalProperties: false
+      type: object
+      required:
+      - job_id
+      - status
+      - message
+      title: JobCancelResponse
+    JobResponse:
+      properties:
+        job_id:
+          type: string
+          title: Job Id
+        status:
+          type: string
+          title: Status
+        command:
+          type: string
+          title: Command
+        shell:
+          type: string
+          title: Shell
+        cwd:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cwd
+        created_at:
+          type: string
+          title: Created At
+        started_at:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Started At
+        finished_at:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Finished At
+        process_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Process Id
+        result:
+          anyOf:
+          - $ref: '#/components/schemas/ShellRunResponse'
+          - type: 'null'
+        error:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Error
+      additionalProperties: false
+      type: object
+      required:
+      - job_id
+      - status
+      - command
+      - shell
+      - cwd
+      - created_at
+      - started_at
+      - finished_at
+      - process_id
+      title: JobResponse
+    JobStartedResponse:
+      properties:
+        job_id:
+          type: string
+          title: Job Id
+        status:
+          type: string
+          title: Status
+      additionalProperties: false
+      type: object
+      required:
+      - job_id
+      - status
+      title: JobStartedResponse
+    ProcessInfo:
+      properties:
+        pid:
+          type: integer
+          title: Pid
+        name:
+          type: string
+          title: Name
+        session_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Session Name
+        memory:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Memory
+      additionalProperties: false
+      type: object
+      required:
+      - pid
+      - name
+      title: ProcessInfo
+    ProcessKillRequest:
+      properties:
+        pid:
+          type: integer
+          exclusiveMinimum: 0.0
+          title: Pid
+        force:
+          type: boolean
+          title: Force
+          default: true
+        tree:
+          type: boolean
+          title: Tree
+          default: true
+        approval_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Approval Id
+      additionalProperties: false
+      type: object
+      required:
+      - pid
+      title: ProcessKillRequest
+    ProcessKillResponse:
+      properties:
+        pid:
+          type: integer
+          title: Pid
+        killed:
+          type: boolean
+          title: Killed
+        stdout:
+          type: string
+          title: Stdout
+        stderr:
+          type: string
+          title: Stderr
+      additionalProperties: false
+      type: object
+      required:
+      - pid
+      - killed
+      - stdout
+      - stderr
+      title: ProcessKillResponse
+    ProcessListRequest:
+      properties:
+        query:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Query
+        max_results:
+          type: integer
+          maximum: 5000.0
+          minimum: 1.0
+          title: Max Results
+          default: 200
+      additionalProperties: false
+      type: object
+      title: ProcessListRequest
+    ProcessListResponse:
+      properties:
+        processes:
+          items:
+            $ref: '#/components/schemas/ProcessInfo'
+          type: array
+          title: Processes
+        truncated:
+          type: boolean
+          title: Truncated
+      additionalProperties: false
+      type: object
+      required:
+      - processes
+      - truncated
+      title: ProcessListResponse
+    RiskLevel:
+      type: string
+      enum:
+      - low
+      - medium
+      - high
+      - critical
+      title: RiskLevel
+    SearchContentRequest:
+      properties:
+        root:
+          type: string
+          title: Root
+        pattern:
+          type: string
+          title: Pattern
+        glob:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Glob
+        regex:
+          type: boolean
+          title: Regex
+          default: false
+        case_sensitive:
+          type: boolean
+          title: Case Sensitive
+          default: false
+        recursive:
+          type: boolean
+          title: Recursive
+          default: true
+        include_hidden:
+          type: boolean
+          title: Include Hidden
+          default: false
+        max_results:
+          type: integer
+          maximum: 1000.0
+          minimum: 1.0
+          title: Max Results
+          default: 100
+        max_file_bytes:
+          type: integer
+          maximum: 10485760.0
+          minimum: 1024.0
+          title: Max File Bytes
+          default: 1048576
+      additionalProperties: false
+      type: object
+      required:
+      - root
+      - pattern
+      title: SearchContentRequest
+    SearchContentResponse:
+      properties:
+        root:
+          type: string
+          title: Root
+        matches:
+          items:
+            $ref: '#/components/schemas/ContentMatch'
+          type: array
+          title: Matches
+        truncated:
+          type: boolean
+          title: Truncated
+      additionalProperties: false
+      type: object
+      required:
+      - root
+      - matches
+      - truncated
+      title: SearchContentResponse
+    SearchFilesRequest:
+      properties:
+        root:
+          type: string
+          title: Root
+        query:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Query
+        glob:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Glob
+        recursive:
+          type: boolean
+          title: Recursive
+          default: true
+        include_hidden:
+          type: boolean
+          title: Include Hidden
+          default: false
+        max_results:
+          type: integer
+          maximum: 5000.0
+          minimum: 1.0
+          title: Max Results
+          default: 100
+      additionalProperties: false
+      type: object
+      required:
+      - root
+      title: SearchFilesRequest
+    SearchFilesResponse:
+      properties:
+        root:
+          type: string
+          title: Root
+        results:
+          items:
+            $ref: '#/components/schemas/FileInfo'
+          type: array
+          title: Results
+        truncated:
+          type: boolean
+          title: Truncated
+      additionalProperties: false
+      type: object
+      required:
+      - root
+      - results
+      - truncated
+      title: SearchFilesResponse
+    ShellRunRequest:
+      properties:
+        command:
+          type: string
+          minLength: 1
+          title: Command
+        cwd:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cwd
+        shell:
+          type: string
+          enum:
+          - powershell
+          - cmd
+          title: Shell
+          default: powershell
+        timeout_seconds:
+          type: number
+          maximum: 300.0
+          minimum: 0.1
+          title: Timeout Seconds
+          default: 10
+        max_output_bytes:
+          type: integer
+          maximum: 1048576.0
+          minimum: 1024.0
+          title: Max Output Bytes
+          default: 65536
+        async_job:
+          type: boolean
+          title: Async Job
+          default: false
+        include_secrets:
+          type: boolean
+          title: Include Secrets
+          default: false
+        approval_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Approval Id
+      additionalProperties: false
+      type: object
+      required:
+      - command
+      title: ShellRunRequest
+    ShellRunResponse:
+      properties:
+        command:
+          type: string
+          title: Command
+        cwd:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cwd
+        shell:
+          type: string
+          title: Shell
+        exit_code:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Exit Code
+        stdout:
+          type: string
+          title: Stdout
+        stderr:
+          type: string
+          title: Stderr
+        timed_out:
+          type: boolean
+          title: Timed Out
+        duration_ms:
+          type: integer
+          title: Duration Ms
+        truncated_stdout:
+          type: boolean
+          title: Truncated Stdout
+        truncated_stderr:
+          type: boolean
+          title: Truncated Stderr
+        redactions:
+          type: integer
+          title: Redactions
+      additionalProperties: false
+      type: object
+      required:
+      - command
+      - cwd
+      - shell
+      - exit_code
+      - stdout
+      - stderr
+      - timed_out
+      - duration_ms
+      - truncated_stdout
+      - truncated_stderr
+      - redactions
+      title: ShellRunResponse
+    SystemInfoResponse:
+      properties:
+        os:
+          type: string
+          title: Os
+        platform:
+          type: string
+          title: Platform
+        hostname:
+          type: string
+          title: Hostname
+        user:
+          type: string
+          title: User
+        process_id:
+          type: integer
+          title: Process Id
+        python:
+          type: string
+          title: Python
+        cwd:
+          type: string
+          title: Cwd
+        is_admin:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Is Admin
+      additionalProperties: false
+      type: object
+      required:
+      - os
+      - platform
+      - hostname
+      - user
+      - process_id
+      - python
+      - cwd
+      - is_admin
+      title: SystemInfoResponse
+    TerminalEvent:
+      properties:
+        event_id:
+          type: integer
+          title: Event Id
+        timestamp:
+          type: string
+          title: Timestamp
+        stream:
+          type: string
+          enum:
+          - command
+          - stdin
+          - stdout
+          - stderr
+          - system
+          title: Stream
+        text:
+          type: string
+          title: Text
+      additionalProperties: false
+      type: object
+      required:
+      - event_id
+      - timestamp
+      - stream
+      - text
+      title: TerminalEvent
+    TerminalEventsRequest:
+      properties:
+        after_event_id:
+          type: integer
+          minimum: 0.0
+          title: After Event Id
+          default: 0
+        max_events:
+          type: integer
+          maximum: 1000.0
+          minimum: 1.0
+          title: Max Events
+          default: 100
+      additionalProperties: false
+      type: object
+      title: TerminalEventsRequest
+    TerminalEventsResponse:
+      properties:
+        session_id:
+          type: string
+          title: Session Id
+        status:
+          type: string
+          title: Status
+        events:
+          items:
+            $ref: '#/components/schemas/TerminalEvent'
+          type: array
+          title: Events
+        next_event_id:
+          type: integer
+          title: Next Event Id
+      additionalProperties: false
+      type: object
+      required:
+      - session_id
+      - status
+      - events
+      - next_event_id
+      title: TerminalEventsResponse
+    TerminalExecRequest:
+      properties:
+        command:
+          type: string
+          minLength: 1
+          title: Command
+        include_secrets:
+          type: boolean
+          title: Include Secrets
+          default: false
+        approval_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Approval Id
+      additionalProperties: false
+      type: object
+      required:
+      - command
+      title: TerminalExecRequest
+    TerminalExecResponse:
+      properties:
+        session:
+          $ref: '#/components/schemas/TerminalSessionInfo'
+        command_id:
+          type: string
+          title: Command Id
+      additionalProperties: false
+      type: object
+      required:
+      - session
+      - command_id
+      title: TerminalExecResponse
+    TerminalSessionCreateRequest:
+      properties:
+        shell:
+          type: string
+          enum:
+          - powershell
+          - cmd
+          title: Shell
+          default: powershell
+        cwd:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cwd
+        name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Name
+        env:
+          additionalProperties:
+            type: string
+          type: object
+          title: Env
+      additionalProperties: false
+      type: object
+      title: TerminalSessionCreateRequest
+    TerminalSessionInfo:
+      properties:
+        session_id:
+          type: string
+          title: Session Id
+        name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Name
+        shell:
+          type: string
+          title: Shell
+        cwd:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cwd
+        status:
+          type: string
+          title: Status
+        created_at:
+          type: string
+          title: Created At
+        last_active_at:
+          type: string
+          title: Last Active At
+        process_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Process Id
+        command_count:
+          type: integer
+          title: Command Count
+      additionalProperties: false
+      type: object
+      required:
+      - session_id
+      - shell
+      - cwd
+      - status
+      - created_at
+      - last_active_at
+      - command_count
+      title: TerminalSessionInfo
+    TerminalSessionListRequest:
+      properties:
+        include_exited:
+          type: boolean
+          title: Include Exited
+          default: true
+      additionalProperties: false
+      type: object
+      title: TerminalSessionListRequest
+    TerminalSessionListResponse:
+      properties:
+        sessions:
+          items:
+            $ref: '#/components/schemas/TerminalSessionInfo'
+          type: array
+          title: Sessions
+      additionalProperties: false
+      type: object
+      required:
+      - sessions
+      title: TerminalSessionListResponse
+    TerminalStdinRequest:
+      properties:
+        input:
+          type: string
+          title: Input
+      additionalProperties: false
+      type: object
+      required:
+      - input
+      title: TerminalStdinRequest
+    TerminalStdinResponse:
+      properties:
+        session_id:
+          type: string
+          title: Session Id
+        bytes_written:
+          type: integer
+          title: Bytes Written
+      additionalProperties: false
+      type: object
+      required:
+      - session_id
+      - bytes_written
+      title: TerminalStdinResponse
+    TerminalTerminateResponse:
+      properties:
+        session_id:
+          type: string
+          title: Session Id
+        status:
+          type: string
+          title: Status
+      additionalProperties: false
+      type: object
+      required:
+      - session_id
+      - status
+      title: TerminalTerminateResponse
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+        input:
+          title: Input
+        ctx:
+          type: object
+          title: Context
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
+  securitySchemes:
+    HTTPBearer:
+      type: http
+      scheme: bearer
+servers:
+- url: https://oblong-bonus-retrace.ngrok-free.dev
