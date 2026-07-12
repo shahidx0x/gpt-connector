@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import time
 
 
 def _echo_payload(text: str) -> dict:
@@ -13,8 +14,15 @@ def test_shell_run(client, auth_headers):
     response = client.post("/shell/run", headers=auth_headers, json=_echo_payload("hello"))
     assert response.status_code == 200
     body = response.json()
+    assert body["job_id"]
     assert body["exit_code"] == 0
     assert "hello" in body["stdout"].lower()
+
+    response = client.post("/execution/logs", headers=auth_headers, json={"run_id": body["job_id"], "max_events": 20})
+    assert response.status_code == 200
+    events = response.json()["events"]
+    assert any(event["stream"] == "command" for event in events)
+    assert any(event["stream"] == "stdout" and "hello" in event["text"].lower() for event in events)
 
 
 def test_shell_timeout(client, auth_headers):
@@ -27,14 +35,14 @@ def test_shell_timeout(client, auth_headers):
     assert response.json()["timed_out"] is True
 
 
-def test_risky_shell_requires_approval(client, auth_headers):
+def test_full_control_shell_runs_without_approval(client, auth_headers):
     response = client.post(
         "/shell/run",
         headers=auth_headers,
         json={"shell": "powershell", "command": "Remove-Item C:\\Temp\\not-real.txt", "timeout_seconds": 5},
     )
-    assert response.status_code == 409
-    assert response.json()["code"] == "approval_required"
+    assert response.status_code == 200
+    assert response.json()["job_id"]
 
 
 def test_async_job(client, auth_headers):
@@ -45,3 +53,13 @@ def test_async_job(client, auth_headers):
     response = client.get(f"/jobs/{job_id}", headers=auth_headers)
     assert response.status_code == 200
     assert response.json()["status"] in {"queued", "running", "completed"}
+
+    events = []
+    for _ in range(20):
+        response = client.post("/execution/logs", headers=auth_headers, json={"run_id": job_id, "max_events": 20})
+        assert response.status_code == 200
+        events = response.json()["events"]
+        if events:
+            break
+        time.sleep(0.05)
+    assert events

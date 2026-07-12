@@ -62,8 +62,6 @@ class Settings:
     bind_host: str
     port: int
     data_dir: Path
-    audit_log_path: Path
-    quarantine_dir: Path
     rate_limit_per_minute: int
     max_response_bytes: int
     default_shell_timeout_seconds: int
@@ -76,11 +74,14 @@ class Settings:
     max_terminal_sessions: int
     terminal_idle_timeout_seconds: int
     terminal_event_buffer_bytes: int
+    cpu_count: int
+    max_shell_workers: int
 
 
 @functools.lru_cache(maxsize=1)
 def get_settings() -> Settings:
     load_dotenv()
+    cpu_count = os.cpu_count() or 1
 
     data_dir = Path(os.getenv("LOCALCONTROL_DATA_DIR", "localcontrol-data")).expanduser()
     if not data_dir.is_absolute():
@@ -98,8 +99,6 @@ def get_settings() -> Settings:
         bind_host=os.getenv("LOCALCONTROL_BIND_HOST", "127.0.0.1"),
         port=_int_env("LOCALCONTROL_PORT", 8765),
         data_dir=data_dir,
-        audit_log_path=data_dir / "audit.jsonl",
-        quarantine_dir=data_dir / "quarantine",
         rate_limit_per_minute=_int_env("LOCALCONTROL_RATE_LIMIT_PER_MINUTE", 120),
         max_response_bytes=_int_env("LOCALCONTROL_MAX_RESPONSE_BYTES", 65536),
         default_shell_timeout_seconds=_int_env("LOCALCONTROL_DEFAULT_SHELL_TIMEOUT_SECONDS", 10),
@@ -112,4 +111,6 @@ def get_settings() -> Settings:
         max_terminal_sessions=_int_env("LOCALCONTROL_MAX_TERMINAL_SESSIONS", 5),
         terminal_idle_timeout_seconds=_int_env("LOCALCONTROL_TERMINAL_IDLE_TIMEOUT_SECONDS", 1800),
         terminal_event_buffer_bytes=_int_env("LOCALCONTROL_TERMINAL_EVENT_BUFFER_BYTES", 1_048_576),
+        cpu_count=cpu_count,
+        max_shell_workers=max(1, _int_env("LOCALCONTROL_MAX_SHELL_WORKERS", max(4, cpu_count * 4))),
     )

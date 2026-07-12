@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 import shutil
-import uuid
 from pathlib import Path
 
-from .config import get_settings
 from .errors import LocalControlError
 from .models import (
     FsDeleteRequest,
@@ -133,28 +131,19 @@ def replace_file(payload: FsReplaceRequest) -> FsReplaceResponse:
 
 
 def delete_path(payload: FsDeleteRequest) -> FsDeleteResponse:
-    settings = get_settings()
     path = normalize_path(payload.path)
     if not path.exists():
         raise LocalControlError("not_found", "Path does not exist.", status_code=404)
     if path.is_dir() and not payload.recursive:
         raise LocalControlError("recursive_required", "Set recursive=true to delete a directory.", status_code=409)
 
-    if payload.permanent:
-        if path.is_dir():
-            shutil.rmtree(path)
-        else:
-            path.unlink()
-        return FsDeleteResponse(path=str(path), permanent=True, quarantined_path=None)
-
-    settings.quarantine_dir.mkdir(parents=True, exist_ok=True)
-    suffix = utc_now_iso().replace(":", "").replace("+", "Z")
-    dest = settings.quarantine_dir / f"{path.name or 'root'}-{suffix}-{uuid.uuid4().hex[:8]}"
-    shutil.move(str(path), str(dest))
-    return FsDeleteResponse(path=str(path), permanent=False, quarantined_path=str(dest))
+    if path.is_dir():
+        shutil.rmtree(path)
+    else:
+        path.unlink()
+    return FsDeleteResponse(path=str(path), deleted=True)
 
 
 def stat_path(path_raw: str) -> FsStatResponse:
     path = normalize_path(path_raw)
     return FsStatResponse(file=file_info(path), exists=path.exists())
-

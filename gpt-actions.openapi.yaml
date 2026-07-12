@@ -2,8 +2,8 @@ openapi: 3.1.0
 info:
   title: Windows LocalControl GPT Actions
   description: Private Custom GPT action schema for a single-user Windows LocalControl
-    bridge. Approving or denying risky operations is intentionally omitted; use the
-    local approval key outside ChatGPT.
+    bridge. Full-control execution mode is enabled; use /execution/logs to retrieve
+    command and terminal output.
   version: 0.1.0
 paths:
   /fs/list:
@@ -321,51 +321,6 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
       security:
       - HTTPBearer: []
-  /artifacts/upload_base64:
-    post:
-      tags:
-      - artifacts
-      summary: Artifacts Upload Base64
-      operationId: artifacts_upload_base64
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ArtifactUploadBase64Request'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ArtifactInfo'
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '409':
-          description: Conflict
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-      security:
-      - HTTPBearer: []
   /artifacts/fetch_url:
     post:
       tags:
@@ -547,51 +502,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-  /artifacts/{artifact_id}/download:
-    get:
-      tags:
-      - artifacts
-      summary: Artifacts Download
-      operationId: artifacts_download
-      security:
-      - HTTPBearer: []
-      parameters:
-      - name: artifact_id
-        in: path
-        required: true
-        schema:
-          type: string
-          title: Artifact Id
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema: {}
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Bad Request
-        '401':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Unauthorized
-        '409':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Conflict
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
   /artifacts/{artifact_id}/write_to_path:
     post:
       tags:
@@ -620,58 +530,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ArtifactInfo'
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Bad Request
-        '401':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Unauthorized
-        '409':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Conflict
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-  /artifacts/{artifact_id}/delete:
-    post:
-      tags:
-      - artifacts
-      summary: Artifacts Delete
-      operationId: artifacts_delete
-      security:
-      - HTTPBearer: []
-      parameters:
-      - name: artifact_id
-        in: path
-        required: true
-        schema:
-          type: string
-          title: Artifact Id
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ArtifactDeleteRequest'
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ArtifactDeleteResponse'
         '400':
           content:
             application/json:
@@ -1172,6 +1030,129 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /execution/logs:
+    post:
+      tags:
+      - execution
+      summary: Execution Logs
+      operationId: execution_logs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExecutionLogRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionLogResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /projects/register:
+    post:
+      tags:
+      - projects
+      summary: Project Register
+      operationId: project_register
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectRegisterRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectInfo'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /projects/list:
+    post:
+      tags:
+      - projects
+      summary: Project List
+      operationId: project_list
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectListResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+      - HTTPBearer: []
   /system/info:
     get:
       tags:
@@ -1203,186 +1184,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-      security:
-      - HTTPBearer: []
-  /git/status:
-    post:
-      tags:
-      - git
-      summary: Git Status Endpoint
-      operationId: git_status
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/GitStatusRequest'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GitStatusResponse'
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '409':
-          description: Conflict
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-      security:
-      - HTTPBearer: []
-  /git/diff:
-    post:
-      tags:
-      - git
-      summary: Git Diff Endpoint
-      operationId: git_diff
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/GitDiffRequest'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GitDiffResponse'
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '409':
-          description: Conflict
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-      security:
-      - HTTPBearer: []
-  /git/add:
-    post:
-      tags:
-      - git
-      summary: Git Add Endpoint
-      operationId: git_add
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/GitAddRequest'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GitAddResponse'
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '409':
-          description: Conflict
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-      security:
-      - HTTPBearer: []
-  /git/commit:
-    post:
-      tags:
-      - git
-      summary: Git Commit Endpoint
-      operationId: git_commit
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/GitCommitRequest'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GitCommitResponse'
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '409':
-          description: Conflict
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
       security:
       - HTTPBearer: []
 components:
@@ -1503,12 +1304,7 @@ components:
       - content
       title: ArtifactCreateTextRequest
     ArtifactDeleteRequest:
-      properties:
-        approval_id:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Approval Id
+      properties: {}
       additionalProperties: false
       type: object
       title: ArtifactDeleteRequest
@@ -1540,11 +1336,6 @@ components:
           - type: string
           - type: 'null'
           title: Name
-        approval_id:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Approval Id
       additionalProperties: false
       type: object
       required:
@@ -1564,11 +1355,6 @@ components:
           - type: string
           - type: 'null'
           title: Name
-        approval_id:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Approval Id
       additionalProperties: false
       type: object
       required:
@@ -1671,11 +1457,6 @@ components:
           type: boolean
           title: Create Parents
           default: true
-        approval_id:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Approval Id
       additionalProperties: false
       type: object
       required:
@@ -1725,6 +1506,105 @@ components:
       - code
       - message
       title: ErrorResponse
+    ExecutionLogEvent:
+      properties:
+        event_id:
+          type: integer
+          title: Event Id
+        timestamp:
+          type: string
+          title: Timestamp
+        run_id:
+          type: string
+          title: Run Id
+        stream:
+          type: string
+          enum:
+          - command
+          - stdin
+          - stdout
+          - stderr
+          - system
+          title: Stream
+        text:
+          type: string
+          title: Text
+        shell:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Shell
+        cwd:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cwd
+        source:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Source
+      additionalProperties: false
+      type: object
+      required:
+      - event_id
+      - timestamp
+      - run_id
+      - stream
+      - text
+      title: ExecutionLogEvent
+    ExecutionLogRequest:
+      properties:
+        after_event_id:
+          type: integer
+          minimum: 0.0
+          title: After Event Id
+          default: 0
+        max_events:
+          type: integer
+          maximum: 5000.0
+          minimum: 1.0
+          title: Max Events
+          default: 200
+        run_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Run Id
+        streams:
+          items:
+            type: string
+            enum:
+            - command
+            - stdin
+            - stdout
+            - stderr
+            - system
+          type: array
+          title: Streams
+      additionalProperties: false
+      type: object
+      title: ExecutionLogRequest
+    ExecutionLogResponse:
+      properties:
+        events:
+          items:
+            $ref: '#/components/schemas/ExecutionLogEvent'
+          type: array
+          title: Events
+        next_event_id:
+          type: integer
+          title: Next Event Id
+        truncated:
+          type: boolean
+          title: Truncated
+      additionalProperties: false
+      type: object
+      required:
+      - events
+      - next_event_id
+      - truncated
+      title: ExecutionLogResponse
     FileInfo:
       properties:
         path:
@@ -1762,15 +1642,6 @@ components:
           type: boolean
           title: Recursive
           default: false
-        permanent:
-          type: boolean
-          title: Permanent
-          default: false
-        approval_id:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Approval Id
       additionalProperties: false
       type: object
       required:
@@ -1781,19 +1652,14 @@ components:
         path:
           type: string
           title: Path
-        permanent:
+        deleted:
           type: boolean
-          title: Permanent
-        quarantined_path:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Quarantined Path
+          title: Deleted
       additionalProperties: false
       type: object
       required:
       - path
-      - permanent
+      - deleted
       title: FsDeleteResponse
     FsListRequest:
       properties:
@@ -1858,11 +1724,6 @@ components:
           type: boolean
           title: Include Secrets
           default: false
-        approval_id:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Approval Id
       additionalProperties: false
       type: object
       required:
@@ -1933,11 +1794,6 @@ components:
           type: boolean
           title: Create Backup
           default: true
-        approval_id:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Approval Id
       additionalProperties: false
       type: object
       required:
@@ -2015,11 +1871,6 @@ components:
           type: boolean
           title: Append
           default: false
-        approval_id:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Approval Id
       additionalProperties: false
       type: object
       required:
@@ -2051,422 +1902,6 @@ components:
       - mode
       - file
       title: FsWriteResponse
-    GitAddRequest:
-      properties:
-        repo_path:
-          type: string
-          title: Repo Path
-        paths:
-          items:
-            type: string
-          type: array
-          title: Paths
-        all:
-          type: boolean
-          title: All
-          default: false
-      additionalProperties: false
-      type: object
-      required:
-      - repo_path
-      title: GitAddRequest
-    GitAddResponse:
-      properties:
-        repo_root:
-          type: string
-          title: Repo Root
-        staged_paths:
-          items:
-            type: string
-          type: array
-          title: Staged Paths
-        stdout:
-          type: string
-          title: Stdout
-        stderr:
-          type: string
-          title: Stderr
-      additionalProperties: false
-      type: object
-      required:
-      - repo_root
-      - staged_paths
-      - stdout
-      - stderr
-      title: GitAddResponse
-    GitBranchEntry:
-      properties:
-        name:
-          type: string
-          title: Name
-        current:
-          type: boolean
-          title: Current
-        upstream:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Upstream
-      additionalProperties: false
-      type: object
-      required:
-      - name
-      - current
-      title: GitBranchEntry
-    GitBranchesRequest:
-      properties:
-        repo_path:
-          type: string
-          title: Repo Path
-      additionalProperties: false
-      type: object
-      required:
-      - repo_path
-      title: GitBranchesRequest
-    GitBranchesResponse:
-      properties:
-        repo_root:
-          type: string
-          title: Repo Root
-        current_branch:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Current Branch
-        branches:
-          items:
-            $ref: '#/components/schemas/GitBranchEntry'
-          type: array
-          title: Branches
-      additionalProperties: false
-      type: object
-      required:
-      - repo_root
-      - branches
-      title: GitBranchesResponse
-    GitCheckoutRequest:
-      properties:
-        repo_path:
-          type: string
-          title: Repo Path
-        ref:
-          type: string
-          minLength: 1
-          title: Ref
-        create_branch:
-          type: boolean
-          title: Create Branch
-          default: false
-        start_point:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Start Point
-      additionalProperties: false
-      type: object
-      required:
-      - repo_path
-      - ref
-      title: GitCheckoutRequest
-    GitCheckoutResponse:
-      properties:
-        repo_root:
-          type: string
-          title: Repo Root
-        branch:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Branch
-        detached:
-          type: boolean
-          title: Detached
-      additionalProperties: false
-      type: object
-      required:
-      - repo_root
-      - branch
-      - detached
-      title: GitCheckoutResponse
-    GitCommitRequest:
-      properties:
-        repo_path:
-          type: string
-          title: Repo Path
-        message:
-          type: string
-          minLength: 1
-          title: Message
-        amend:
-          type: boolean
-          title: Amend
-          default: false
-      additionalProperties: false
-      type: object
-      required:
-      - repo_path
-      - message
-      title: GitCommitRequest
-    GitCommitResponse:
-      properties:
-        repo_root:
-          type: string
-          title: Repo Root
-        commit:
-          type: string
-          title: Commit
-        short_commit:
-          type: string
-          title: Short Commit
-        subject:
-          type: string
-          title: Subject
-      additionalProperties: false
-      type: object
-      required:
-      - repo_root
-      - commit
-      - short_commit
-      - subject
-      title: GitCommitResponse
-    GitDiffRequest:
-      properties:
-        repo_path:
-          type: string
-          title: Repo Path
-        ref:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Ref
-        cached:
-          type: boolean
-          title: Cached
-          default: false
-        paths:
-          items:
-            type: string
-          type: array
-          title: Paths
-        max_bytes:
-          type: integer
-          maximum: 1048576.0
-          minimum: 1024.0
-          title: Max Bytes
-          default: 65536
-      additionalProperties: false
-      type: object
-      required:
-      - repo_path
-      title: GitDiffRequest
-    GitDiffResponse:
-      properties:
-        repo_root:
-          type: string
-          title: Repo Root
-        diff:
-          type: string
-          title: Diff
-        truncated:
-          type: boolean
-          title: Truncated
-      additionalProperties: false
-      type: object
-      required:
-      - repo_root
-      - diff
-      - truncated
-      title: GitDiffResponse
-    GitFileStatus:
-      properties:
-        path:
-          type: string
-          title: Path
-        index_status:
-          type: string
-          title: Index Status
-        worktree_status:
-          type: string
-          title: Worktree Status
-        renamed_from:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Renamed From
-      additionalProperties: false
-      type: object
-      required:
-      - path
-      - index_status
-      - worktree_status
-      title: GitFileStatus
-    GitLogEntry:
-      properties:
-        commit:
-          type: string
-          title: Commit
-        short_commit:
-          type: string
-          title: Short Commit
-        author:
-          type: string
-          title: Author
-        committed_at:
-          type: string
-          title: Committed At
-        subject:
-          type: string
-          title: Subject
-      additionalProperties: false
-      type: object
-      required:
-      - commit
-      - short_commit
-      - author
-      - committed_at
-      - subject
-      title: GitLogEntry
-    GitLogRequest:
-      properties:
-        repo_path:
-          type: string
-          title: Repo Path
-        ref:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Ref
-        max_count:
-          type: integer
-          maximum: 200.0
-          minimum: 1.0
-          title: Max Count
-          default: 20
-      additionalProperties: false
-      type: object
-      required:
-      - repo_path
-      title: GitLogRequest
-    GitLogResponse:
-      properties:
-        repo_root:
-          type: string
-          title: Repo Root
-        entries:
-          items:
-            $ref: '#/components/schemas/GitLogEntry'
-          type: array
-          title: Entries
-      additionalProperties: false
-      type: object
-      required:
-      - repo_root
-      - entries
-      title: GitLogResponse
-    GitResetMode:
-      type: string
-      enum:
-      - soft
-      - mixed
-      - hard
-      title: GitResetMode
-    GitResetRequest:
-      properties:
-        repo_path:
-          type: string
-          title: Repo Path
-        ref:
-          type: string
-          title: Ref
-          default: HEAD~1
-        mode:
-          $ref: '#/components/schemas/GitResetMode'
-          default: mixed
-        approval_id:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Approval Id
-      additionalProperties: false
-      type: object
-      required:
-      - repo_path
-      title: GitResetRequest
-    GitResetResponse:
-      properties:
-        repo_root:
-          type: string
-          title: Repo Root
-        head:
-          type: string
-          title: Head
-        short_head:
-          type: string
-          title: Short Head
-        subject:
-          type: string
-          title: Subject
-      additionalProperties: false
-      type: object
-      required:
-      - repo_root
-      - head
-      - short_head
-      - subject
-      title: GitResetResponse
-    GitStatusRequest:
-      properties:
-        repo_path:
-          type: string
-          title: Repo Path
-      additionalProperties: false
-      type: object
-      required:
-      - repo_path
-      title: GitStatusRequest
-    GitStatusResponse:
-      properties:
-        repo_root:
-          type: string
-          title: Repo Root
-        branch:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Branch
-        upstream:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Upstream
-        ahead:
-          type: integer
-          title: Ahead
-          default: 0
-        behind:
-          type: integer
-          title: Behind
-          default: 0
-        detached:
-          type: boolean
-          title: Detached
-          default: false
-        clean:
-          type: boolean
-          title: Clean
-        files:
-          items:
-            $ref: '#/components/schemas/GitFileStatus'
-          type: array
-          title: Files
-      additionalProperties: false
-      type: object
-      required:
-      - repo_root
-      - branch
-      - clean
-      - files
-      title: GitStatusResponse
     HTTPValidationError:
       properties:
         detail:
@@ -2490,6 +1925,16 @@ components:
         allow_all:
           type: boolean
           title: Allow All
+        full_control:
+          type: boolean
+          title: Full Control
+          default: true
+        cpu_count:
+          type: integer
+          title: Cpu Count
+        max_shell_workers:
+          type: integer
+          title: Max Shell Workers
         version:
           type: string
           title: Version
@@ -2500,6 +1945,8 @@ components:
       - auth_configured
       - approval_configured
       - allow_all
+      - cpu_count
+      - max_shell_workers
       - version
       title: HealthResponse
     JobCancelResponse:
@@ -2534,6 +1981,11 @@ components:
         shell:
           type: string
           title: Shell
+        project_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Project Id
         cwd:
           anyOf:
           - type: string
@@ -2631,11 +2083,6 @@ components:
           type: boolean
           title: Tree
           default: true
-        approval_id:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Approval Id
       additionalProperties: false
       type: object
       required:
@@ -2695,6 +2142,79 @@ components:
       - processes
       - truncated
       title: ProcessListResponse
+    ProjectInfo:
+      properties:
+        project_id:
+          type: string
+          title: Project Id
+        name:
+          type: string
+          title: Name
+        path:
+          type: string
+          title: Path
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        created_at:
+          type: string
+          title: Created At
+        last_used_at:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Last Used At
+        exists:
+          type: boolean
+          title: Exists
+      additionalProperties: false
+      type: object
+      required:
+      - project_id
+      - name
+      - path
+      - created_at
+      - exists
+      title: ProjectInfo
+    ProjectListResponse:
+      properties:
+        projects:
+          items:
+            $ref: '#/components/schemas/ProjectInfo'
+          type: array
+          title: Projects
+      additionalProperties: false
+      type: object
+      required:
+      - projects
+      title: ProjectListResponse
+    ProjectRegisterRequest:
+      properties:
+        path:
+          type: string
+          title: Path
+        project_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Project Id
+        name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Name
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+      additionalProperties: false
+      type: object
+      required:
+      - path
+      title: ProjectRegisterRequest
     RiskLevel:
       type: string
       enum:
@@ -2706,8 +2226,15 @@ components:
     SearchContentRequest:
       properties:
         root:
-          type: string
+          anyOf:
+          - type: string
+          - type: 'null'
           title: Root
+        project_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Project Id
         pattern:
           type: string
           title: Pattern
@@ -2747,7 +2274,6 @@ components:
       additionalProperties: false
       type: object
       required:
-      - root
       - pattern
       title: SearchContentRequest
     SearchContentResponse:
@@ -2773,8 +2299,15 @@ components:
     SearchFilesRequest:
       properties:
         root:
-          type: string
+          anyOf:
+          - type: string
+          - type: 'null'
           title: Root
+        project_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Project Id
         query:
           anyOf:
           - type: string
@@ -2801,8 +2334,6 @@ components:
           default: 100
       additionalProperties: false
       type: object
-      required:
-      - root
       title: SearchFilesRequest
     SearchFilesResponse:
       properties:
@@ -2830,6 +2361,11 @@ components:
           type: string
           minLength: 1
           title: Command
+        project_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Project Id
         cwd:
           anyOf:
           - type: string
@@ -2862,11 +2398,6 @@ components:
           type: boolean
           title: Include Secrets
           default: false
-        approval_id:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Approval Id
       additionalProperties: false
       type: object
       required:
@@ -2874,6 +2405,16 @@ components:
       title: ShellRunRequest
     ShellRunResponse:
       properties:
+        job_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Job Id
+        project_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Project Id
         command:
           type: string
           title: Command
@@ -3044,11 +2585,6 @@ components:
           type: boolean
           title: Include Secrets
           default: false
-        approval_id:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Approval Id
       additionalProperties: false
       type: object
       required:
@@ -3076,6 +2612,11 @@ components:
           - cmd
           title: Shell
           default: powershell
+        project_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Project Id
         cwd:
           anyOf:
           - type: string
@@ -3107,6 +2648,11 @@ components:
         shell:
           type: string
           title: Shell
+        project_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Project Id
         cwd:
           anyOf:
           - type: string
@@ -3230,4 +2776,4 @@ components:
       type: http
       scheme: bearer
 servers:
-- url: https://oblong-bonus-retrace.ngrok-free.dev
+- url: https://YOUR-RESERVED-NGROK-DOMAIN.ngrok-free.app

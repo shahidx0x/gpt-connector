@@ -10,6 +10,7 @@ build/
 *.egg-info/
 .mypy_cache/
 .ruff_cache/
+.local-tools/
 localcontrol-data/
 localcontrol-keys.txt
 .commandcode/

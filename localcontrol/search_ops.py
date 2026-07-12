@@ -14,8 +14,9 @@ from .models import (
     SearchFilesRequest,
     SearchFilesResponse,
 )
+from .project_ops import project_store
 from .redaction import redact_text
-from .utils import file_info, is_hidden_path, normalize_path
+from .utils import file_info, is_hidden_path
 
 
 def _walk(root: Path, recursive: bool, include_hidden: bool):
@@ -34,7 +35,8 @@ def _walk(root: Path, recursive: bool, include_hidden: bool):
 
 def search_files(payload: SearchFilesRequest) -> SearchFilesResponse:
     settings = get_settings()
-    root = normalize_path(payload.root)
+    root = project_store.resolve_path(payload.project_id, payload.root)
+    assert root is not None
     if not root.exists() or not root.is_dir():
         raise LocalControlError("not_directory", "Root must be an existing directory.", status_code=400)
 
@@ -60,7 +62,8 @@ def search_files(payload: SearchFilesRequest) -> SearchFilesResponse:
 
 def search_content(payload: SearchContentRequest) -> SearchContentResponse:
     settings = get_settings()
-    root = normalize_path(payload.root)
+    root = project_store.resolve_path(payload.project_id, payload.root)
+    assert root is not None
     if not root.exists() or not root.is_dir():
         raise LocalControlError("not_directory", "Root must be an existing directory.", status_code=400)
 
@@ -96,4 +99,3 @@ def search_content(payload: SearchContentRequest) -> SearchContentResponse:
             break
 
     return SearchContentResponse(root=str(root), matches=matches, truncated=truncated)
-

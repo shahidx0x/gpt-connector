@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 import threading
 
-from .utils import utc_now_iso
+from .execution_log import execution_log
 
 _console_lock = threading.Lock()
 
@@ -15,8 +15,17 @@ def mirror_execution_event(
     text: str,
     shell: str | None = None,
     cwd: str | None = None,
+    source: str | None = None,
 ) -> None:
-    prefix = f"[{utc_now_iso()}] [{session_id}] [{stream}]"
+    event = execution_log.append(
+        run_id=session_id,
+        stream=stream,  # type: ignore[arg-type]
+        text=text,
+        shell=shell,
+        cwd=cwd,
+        source=source,
+    )
+    prefix = f"[{event.timestamp}] [{session_id}] [{stream}]"
     details = []
     if shell:
         details.append(f"shell={shell}")

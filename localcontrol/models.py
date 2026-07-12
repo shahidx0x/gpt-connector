@@ -29,6 +29,9 @@ class HealthResponse(StrictModel):
     auth_configured: bool
     approval_configured: bool
     allow_all: bool
+    full_control: bool = True
+    cpu_count: int
+    max_shell_workers: int
     version: str
 
 
@@ -65,7 +68,6 @@ class FsReadRequest(StrictModel):
     encoding: str = "utf-8"
     max_bytes: int = Field(default=65536, ge=1, le=10_485_760)
     include_secrets: bool = False
-    approval_id: str | None = None
 
 
 class FsReadResponse(StrictModel):
@@ -86,7 +88,6 @@ class FsWriteRequest(StrictModel):
     create_parents: bool = True
     overwrite: bool = False
     append: bool = False
-    approval_id: str | None = None
 
 
 class FsWriteResponse(StrictModel):
@@ -103,7 +104,6 @@ class FsReplaceRequest(StrictModel):
     count: int = Field(default=0, ge=0, description="0 means replace every occurrence.")
     encoding: str = "utf-8"
     create_backup: bool = True
-    approval_id: str | None = None
 
 
 class FsReplaceResponse(StrictModel):
@@ -116,14 +116,11 @@ class FsReplaceResponse(StrictModel):
 class FsDeleteRequest(StrictModel):
     path: str
     recursive: bool = False
-    permanent: bool = False
-    approval_id: str | None = None
 
 
 class FsDeleteResponse(StrictModel):
     path: str
-    permanent: bool
-    quarantined_path: str | None = None
+    deleted: bool
 
 
 class FsStatRequest(StrictModel):
@@ -163,14 +160,12 @@ class ArtifactUploadBase64Request(StrictModel):
 class ArtifactFetchUrlRequest(StrictModel):
     url: str
     name: str | None = None
-    approval_id: str | None = None
 
 
 class ArtifactFromPathRequest(StrictModel):
     path: str
     copy_file: bool = Field(default=False, alias="copy")
     name: str | None = None
-    approval_id: str | None = None
 
 
 class ArtifactListRequest(StrictModel):
@@ -185,11 +180,10 @@ class ArtifactWriteToPathRequest(StrictModel):
     path: str
     overwrite: bool = False
     create_parents: bool = True
-    approval_id: str | None = None
 
 
 class ArtifactDeleteRequest(StrictModel):
-    approval_id: str | None = None
+    pass
 
 
 class ArtifactDeleteResponse(StrictModel):
@@ -199,7 +193,8 @@ class ArtifactDeleteResponse(StrictModel):
 
 
 class SearchFilesRequest(StrictModel):
-    root: str
+    root: str | None = None
+    project_id: str | None = None
     query: str | None = None
     glob: str | None = None
     recursive: bool = True
@@ -221,7 +216,8 @@ class ContentMatch(StrictModel):
 
 
 class SearchContentRequest(StrictModel):
-    root: str
+    root: str | None = None
+    project_id: str | None = None
     pattern: str
     glob: str | None = None
     regex: bool = False
@@ -240,16 +236,18 @@ class SearchContentResponse(StrictModel):
 
 class ShellRunRequest(StrictModel):
     command: str = Field(min_length=1)
+    project_id: str | None = None
     cwd: str | None = None
     shell: Literal["powershell", "cmd"] = "powershell"
     timeout_seconds: float = Field(default=10, ge=0.1, le=300)
     max_output_bytes: int = Field(default=65536, ge=1024, le=1_048_576)
     async_job: bool = False
     include_secrets: bool = False
-    approval_id: str | None = None
 
 
 class ShellRunResponse(StrictModel):
+    job_id: str | None = None
+    project_id: str | None = None
     command: str
     cwd: str | None
     shell: str
@@ -265,6 +263,7 @@ class ShellRunResponse(StrictModel):
 
 class TerminalSessionCreateRequest(StrictModel):
     shell: Literal["powershell", "cmd"] = "powershell"
+    project_id: str | None = None
     cwd: str | None = None
     name: str | None = None
     env: dict[str, str] = Field(default_factory=dict)
@@ -274,6 +273,7 @@ class TerminalSessionInfo(StrictModel):
     session_id: str
     name: str | None = None
     shell: str
+    project_id: str | None = None
     cwd: str | None
     status: str
     created_at: str
@@ -293,7 +293,6 @@ class TerminalSessionListResponse(StrictModel):
 class TerminalExecRequest(StrictModel):
     command: str = Field(min_length=1)
     include_secrets: bool = False
-    approval_id: str | None = None
 
 
 class TerminalExecResponse(StrictModel):
@@ -329,6 +328,30 @@ class TerminalEventsResponse(StrictModel):
     next_event_id: int
 
 
+class ExecutionLogEvent(StrictModel):
+    event_id: int
+    timestamp: str
+    run_id: str
+    stream: Literal["command", "stdin", "stdout", "stderr", "system"]
+    text: str
+    shell: str | None = None
+    cwd: str | None = None
+    source: str | None = None
+
+
+class ExecutionLogRequest(StrictModel):
+    after_event_id: int = Field(default=0, ge=0)
+    max_events: int = Field(default=200, ge=1, le=5000)
+    run_id: str | None = None
+    streams: list[Literal["command", "stdin", "stdout", "stderr", "system"]] = Field(default_factory=list)
+
+
+class ExecutionLogResponse(StrictModel):
+    events: list[ExecutionLogEvent]
+    next_event_id: int
+    truncated: bool
+
+
 class TerminalTerminateResponse(StrictModel):
     session_id: str
     status: str
@@ -344,6 +367,7 @@ class JobResponse(StrictModel):
     status: str
     command: str
     shell: str
+    project_id: str | None = None
     cwd: str | None
     created_at: str
     started_at: str | None
@@ -391,7 +415,6 @@ class ProcessKillRequest(StrictModel):
     pid: int = Field(gt=0)
     force: bool = True
     tree: bool = True
-    approval_id: str | None = None
 
 
 class ProcessKillResponse(StrictModel):
@@ -401,141 +424,32 @@ class ProcessKillResponse(StrictModel):
     stderr: str
 
 
-class GitStatusRequest(StrictModel):
-    repo_path: str
-
-
-class GitFileStatus(StrictModel):
-    path: str
-    index_status: str
-    worktree_status: str
-    renamed_from: str | None = None
-
-
-class GitStatusResponse(StrictModel):
-    repo_root: str
-    branch: str | None
-    upstream: str | None = None
-    ahead: int = 0
-    behind: int = 0
-    detached: bool = False
-    clean: bool
-    files: list[GitFileStatus]
-
-
-class GitLogRequest(StrictModel):
-    repo_path: str
-    ref: str | None = None
-    max_count: int = Field(default=20, ge=1, le=200)
-
-
-class GitLogEntry(StrictModel):
-    commit: str
-    short_commit: str
-    author: str
-    committed_at: str
-    subject: str
-
-
-class GitLogResponse(StrictModel):
-    repo_root: str
-    entries: list[GitLogEntry]
-
-
-class GitDiffRequest(StrictModel):
-    repo_path: str
-    ref: str | None = None
-    cached: bool = False
-    paths: list[str] = Field(default_factory=list)
-    max_bytes: int = Field(default=65536, ge=1024, le=1_048_576)
-
-
-class GitDiffResponse(StrictModel):
-    repo_root: str
-    diff: str
-    truncated: bool
-
-
-class GitBranchesRequest(StrictModel):
-    repo_path: str
-
-
-class GitBranchEntry(StrictModel):
-    name: str
-    current: bool
-    upstream: str | None = None
-
-
-class GitBranchesResponse(StrictModel):
-    repo_root: str
-    current_branch: str | None = None
-    branches: list[GitBranchEntry]
-
-
-class GitAddRequest(StrictModel):
-    repo_path: str
-    paths: list[str] = Field(default_factory=list)
-    all: bool = False
-
-
-class GitAddResponse(StrictModel):
-    repo_root: str
-    staged_paths: list[str]
-    stdout: str
-    stderr: str
-
-
-class GitCommitRequest(StrictModel):
-    repo_path: str
-    message: str = Field(min_length=1)
-    amend: bool = False
-
-
-class GitCommitResponse(StrictModel):
-    repo_root: str
-    commit: str
-    short_commit: str
-    subject: str
-
-
-class GitCheckoutRequest(StrictModel):
-    repo_path: str
-    ref: str = Field(min_length=1)
-    create_branch: bool = False
-    start_point: str | None = None
-
-
-class GitCheckoutResponse(StrictModel):
-    repo_root: str
-    branch: str | None
-    detached: bool
-
-
-class GitResetMode(str, Enum):
-    soft = "soft"
-    mixed = "mixed"
-    hard = "hard"
-
-
-class GitResetRequest(StrictModel):
-    repo_path: str
-    ref: str = "HEAD~1"
-    mode: GitResetMode = GitResetMode.mixed
-    approval_id: str | None = None
-
-
-class GitResetResponse(StrictModel):
-    repo_root: str
-    head: str
-    short_head: str
-    subject: str
-
-
 class ApprovalRequest(StrictModel):
     action: str = Field(min_length=1)
     reason: str = Field(min_length=1)
     risk: RiskLevel = RiskLevel.high
     payload: dict[str, Any] = Field(default_factory=dict)
+
+
+class ProjectRegisterRequest(StrictModel):
+    path: str
+    project_id: str | None = None
+    name: str | None = None
+    description: str | None = None
+
+
+class ProjectInfo(StrictModel):
+    project_id: str
+    name: str
+    path: str
+    description: str | None = None
+    created_at: str
+    last_used_at: str | None = None
+    exists: bool
+
+
+class ProjectListResponse(StrictModel):
+    projects: list[ProjectInfo]
 
 
 class ApprovalDecisionRequest(StrictModel):

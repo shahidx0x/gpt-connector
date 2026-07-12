@@ -37,14 +37,22 @@ def test_curated_gpt_schema_stays_under_30_operations():
     schema = build_schema("https://oblong-bonus-retrace.ngrok-free.dev")
     operation_count = sum(len(methods) for methods in schema["paths"].values())
     assert operation_count <= MAX_GPT_ACTION_OPERATIONS
-    assert operation_count == 30
     assert "/terminal/sessions/{session_id}/exec" in schema["paths"]
+    assert "/execution/logs" in schema["paths"]
+    assert "/projects/register" in schema["paths"]
+    assert "/projects/list" in schema["paths"]
     assert "/artifacts/fetch_url" in schema["paths"]
+    assert "/artifacts/upload_base64" not in schema["paths"]
+    assert "/artifacts/{artifact_id}/download" not in schema["paths"]
+    assert "/artifacts/{artifact_id}/delete" not in schema["paths"]
     assert "/process/kill" not in schema["paths"]
-    assert "/git/reset" not in schema["paths"]
+    assert not any(path.startswith("/git/") for path in schema["paths"])
 
 
-def test_health_reports_allow_all_false_by_default(client):
+def test_health_reports_full_control_mode(client):
     response = client.get("/health")
     assert response.status_code == 200
-    assert response.json()["allow_all"] is False
+    assert response.json()["allow_all"] is True
+    assert response.json()["full_control"] is True
+    assert response.json()["cpu_count"] >= 1
+    assert response.json()["max_shell_workers"] >= 1

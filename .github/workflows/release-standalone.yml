@@ -1,0 +1,149 @@
+name: Release Standalone Windows EXE
+
+"on":
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: "Release tag for manual runs. Defaults to v<pyproject version>."
+        required: false
+        type: string
+      publish_release:
+        description: "Create or update a GitHub Release."
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-standalone-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  windows-standalone:
+    name: Build standalone Windows EXE
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      ARTIFACT_BASENAME: LocalControl-windows-x64-standalone
+      PYTHON_VERSION: "3.12"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+          python -m pip install "pyinstaller>=6"
+
+      - name: Run tests
+        run: python -m pytest
+
+      - name: Build one-file EXE with bundled ngrok
+        run: .\scripts\build-exe.ps1 -OneFile -SkipInstall
+
+      - name: Smoke test EXE
+        run: |
+          .\dist\LocalControl.exe --help
+          .\dist\LocalControl.exe --version
+          .\dist\LocalControl.exe schema --server-url https://example.test --output .commandcode\exe-schema-test.yaml
+          Remove-Item -LiteralPath .commandcode\exe-schema-test.yaml -Force
+
+      - name: Confirm ngrok is bundled
+        run: |
+          $contents = python -m PyInstaller.utils.cliutils.archive_viewer -l -b .\dist\LocalControl.exe
+          if (-not ($contents | Select-String -SimpleMatch "ngrok.exe")) {
+            throw "ngrok.exe was not found inside the bundled PyInstaller executable."
+          }
+
+      - name: Package release assets
+        run: |
+          New-Item -ItemType Directory -Force -Path release | Out-Null
+
+          $exeAsset = Join-Path "release" "$env:ARTIFACT_BASENAME.exe"
+          $zipAsset = Join-Path "release" "$env:ARTIFACT_BASENAME.zip"
+          $exeChecksum = "$exeAsset.sha256"
+          $zipChecksum = "$zipAsset.sha256"
+
+          Copy-Item -LiteralPath .\dist\LocalControl.exe -Destination $exeAsset -Force
+          Compress-Archive -LiteralPath $exeAsset -DestinationPath $zipAsset -Force
+
+          $exeHash = (Get-FileHash -LiteralPath $exeAsset -Algorithm SHA256).Hash.ToLowerInvariant()
+          $zipHash = (Get-FileHash -LiteralPath $zipAsset -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$exeHash  $(Split-Path -Leaf $exeAsset)" | Set-Content -LiteralPath $exeChecksum -Encoding ascii
+          "$zipHash  $(Split-Path -Leaf $zipAsset)" | Set-Content -LiteralPath $zipChecksum -Encoding ascii
+
+          Get-ChildItem -LiteralPath release -File | Select-Object Name, Length
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: LocalControl-windows-x64-standalone
+          path: release/*
+          if-no-files-found: error
+
+      - name: Resolve release metadata
+        id: release_meta
+        run: |
+          $version = python -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])"
+
+          if ("${{ github.event_name }}" -eq "push") {
+            $tag = "${{ github.ref_name }}"
+          } else {
+            $tag = "${{ inputs.tag_name }}"
+            if (-not $tag) {
+              $tag = "v$version"
+            }
+          }
+
+          "tag_name=$tag" >> $env:GITHUB_OUTPUT
+          "release_title=LocalControl $tag" >> $env:GITHUB_OUTPUT
+
+      - name: Create or update GitHub Release
+        if: github.event_name == 'push' || inputs.publish_release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ steps.release_meta.outputs.tag_name }}
+          RELEASE_TITLE: ${{ steps.release_meta.outputs.release_title }}
+        run: |
+          $notes = @"
+          Standalone Windows x64 LocalControl build.
+
+          Assets:
+          - LocalControl-windows-x64-standalone.exe: one-file PyInstaller executable.
+          - LocalControl-windows-x64-standalone.zip: zipped copy of the same executable.
+          - *.sha256: SHA-256 checksums.
+
+          The executable bundles ngrok and starts tunnel mode by default when launched without arguments. The first tunnel run still requires a valid ngrok authtoken.
+          "@
+
+          $assetPaths = Get-ChildItem -LiteralPath release -File | ForEach-Object { $_.FullName }
+
+          $releaseExists = $false
+          try {
+            gh release view $env:RELEASE_TAG *> $null
+            $releaseExists = $LASTEXITCODE -eq 0
+          } catch {
+            $releaseExists = $false
+          }
+
+          if ($releaseExists) {
+            gh release upload $env:RELEASE_TAG $assetPaths --clobber
+            gh release edit $env:RELEASE_TAG --title $env:RELEASE_TITLE --notes $notes
+          } else {
+            gh release create $env:RELEASE_TAG $assetPaths --target $env:GITHUB_SHA --title $env:RELEASE_TITLE --notes $notes
+          }

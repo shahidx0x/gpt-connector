@@ -1,22 +1,14 @@
 from __future__ import annotations
 
-import hashlib
 import json
 import threading
 import uuid
 from dataclasses import dataclass, field
 from typing import Any
 
-from .errors import ApprovalRequiredError, LocalControlError
+from .errors import LocalControlError
 from .models import ApprovalRecordModel, ApprovalStatus, RiskLevel
 from .utils import utc_now_iso
-
-
-def _payload_hash(payload: dict[str, Any]) -> str | None:
-    if not payload:
-        return None
-    canonical = json.dumps(payload, sort_keys=True, default=str, ensure_ascii=True)
-    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
 def _payload_summary(payload: dict[str, Any]) -> dict[str, Any]:
@@ -38,7 +30,6 @@ class ApprovalRecord:
     risk: RiskLevel
     status: ApprovalStatus
     created_at: str
-    payload_hash: str | None = None
     payload_summary: dict[str, Any] = field(default_factory=dict)
     approved_at: str | None = None
     denied_at: str | None = None
@@ -87,7 +78,6 @@ class ApprovalStore:
             risk=risk,
             status=ApprovalStatus.pending,
             created_at=utc_now_iso(),
-            payload_hash=_payload_hash(payload),
             payload_summary=_payload_summary(payload),
         )
         with self._lock:
@@ -127,37 +117,5 @@ class ApprovalStore:
             record.note = note
             return record.public()
 
-    def ensure_approved(
-        self,
-        *,
-        action: str,
-        reason: str,
-        risk: RiskLevel,
-        approval_id: str | None,
-        payload: dict[str, Any] | None = None,
-    ) -> None:
-        payload = payload or {}
-        if not approval_id:
-            approval = self.create(action=action, reason=reason, risk=risk, payload=payload)
-            raise ApprovalRequiredError(approval.model_dump(mode="json"))
-
-        expected_hash = _payload_hash(payload)
-        with self._lock:
-            record = self._items.get(approval_id)
-            if not record:
-                raise LocalControlError("approval_not_found", "Approval was not found.", status_code=404)
-            if record.action != action:
-                raise LocalControlError("approval_action_mismatch", "Approval action does not match operation.", status_code=403)
-            if record.status == ApprovalStatus.denied:
-                raise LocalControlError("approval_denied", "Approval was denied.", status_code=403)
-            if record.status != ApprovalStatus.approved:
-                raise ApprovalRequiredError(record.public().model_dump(mode="json"), "Approval is still pending.")
-            if record.consumed_at:
-                raise LocalControlError("approval_consumed", "Approval has already been consumed.", status_code=403)
-            if record.payload_hash and expected_hash and record.payload_hash != expected_hash:
-                raise LocalControlError("approval_payload_mismatch", "Approval payload does not match operation.", status_code=403)
-            record.consumed_at = utc_now_iso()
-
 
 approval_store = ApprovalStore()
-

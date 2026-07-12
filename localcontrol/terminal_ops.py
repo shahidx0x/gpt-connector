@@ -23,21 +23,23 @@ from .models import (
     TerminalStdinResponse,
     TerminalTerminateResponse,
 )
+from .project_ops import project_store
 from .redaction import redact_text
-from .utils import normalize_path, utc_now_iso
+from .utils import utc_now_iso
 
 
 def _shell_args(shell: str) -> list[str]:
     if shell == "cmd":
-        return [shutil.which("cmd.exe") or "cmd.exe", "/Q", "/K"]
+        return [shutil.which("cmd.exe") or "cmd.exe", "/Q", "/D", "/K"]
     exe = shutil.which("powershell.exe") or shutil.which("pwsh") or "powershell.exe"
-    return [exe, "-NoLogo", "-NoProfile", "-NoExit", "-Command", "-"]
+    return [exe, "-NoLogo", "-NoProfile", "-NoExit", "-ExecutionPolicy", "Bypass", "-Command", "-"]
 
 
 @dataclass
 class _TerminalSession:
     session_id: str
     shell: str
+    project_id: str | None
     cwd: str | None
     name: str | None
     process: subprocess.Popen
@@ -71,7 +73,7 @@ class TerminalSessionManager:
             if active_count >= get_settings().max_terminal_sessions:
                 raise LocalControlError("terminal_session_limit", "Maximum active terminal sessions reached.", status_code=429)
 
-        cwd_path = normalize_path(payload.cwd) if payload.cwd else None
+        cwd_path = project_store.resolve_path(payload.project_id, payload.cwd, require_path=False)
         if cwd_path and not cwd_path.is_dir():
             raise LocalControlError("invalid_cwd", "cwd must be an existing directory.", status_code=400)
         env = os.environ.copy()
@@ -95,6 +97,7 @@ class TerminalSessionManager:
         session = _TerminalSession(
             session_id=str(uuid.uuid4()),
             shell=payload.shell,
+            project_id=payload.project_id,
             cwd=str(cwd_path) if cwd_path else None,
             name=payload.name,
             process=process,
@@ -183,6 +186,7 @@ class TerminalSessionManager:
             session_id=session.session_id,
             name=session.name,
             shell=session.shell,
+            project_id=session.project_id,
             cwd=session.cwd,
             status=session.status,
             created_at=session.created_at,
@@ -206,7 +210,7 @@ class TerminalSessionManager:
                 removed = session.events.popleft()
                 session.event_bytes -= len(removed.text.encode("utf-8"))
             session.last_active_at = utc_now_iso()
-        mirror_execution_event(session_id=session.session_id, stream=stream, text=redacted, shell=session.shell, cwd=session.cwd)
+        mirror_execution_event(session_id=session.session_id, stream=stream, text=redacted, shell=session.shell, cwd=session.cwd, source="terminal")
 
     def _read_stream(self, session_id: str, stream: str, stream_obj) -> None:
         if stream_obj is None:
