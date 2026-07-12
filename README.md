@@ -1,6 +1,28 @@
 # GPT-Connect
 
-Private FastAPI bridge for letting a Custom GPT call typed local-control endpoints on Windows or Linux: file I/O, search, shell commands, process inspection, terminal sessions, and execution logs.
+GPT-Connect gives ChatGPT or a Custom GPT real, authenticated control over your own devices.
+
+It is built for the main limitation of Codex and web ChatGPT: they can reason well, but they cannot directly see your local projects, run your local tools, inspect your terminal output, or keep live context from each machine unless something local exposes that control safely. GPT-Connect is that local bridge.
+
+It runs on your device, uses your local OS permissions, and exposes a small private action surface that a Custom GPT can call through an HTTPS tunnel such as ngrok. There is no central hosted GPT-Connect server.
+
+## What It Solves
+
+- Lets ChatGPT work with your real files, commands, projects, logs, and terminals.
+- Gives Codex-style local context to web ChatGPT through Custom GPT Actions.
+- Keeps each device independent: every computer or phone runs its own local bridge.
+- Lets one GPT collect context from multiple devices by calling each device's GPT-Connect URL.
+- Runs command work in tracked jobs so command output can be retrieved later.
+- Handles multiple projects without mixing paths or repeating long folder names.
+- Works cross-platform: Windows, Ubuntu/Linux, and Android through Termux.
+
+On Android/Termux, GPT-Connect can control the Termux environment and files/processes allowed by Android permissions. Full-device control depends on Android permissions, storage access, root, or extra tools installed by the user.
+
+## How It Is Different
+
+GPT-Connect is similar in spirit to local-control tools like OpenClaw: the AI can act on your real machine. The difference is that GPT-Connect is designed as a simple local bridge for Custom GPT usage. You run it on your own device, expose it only when needed, and authenticate every call.
+
+It is not a cloud command server. The server process is local to your device.
 
 ## Quick Start
 
@@ -18,400 +40,195 @@ sudo apt-get install -y python3 python3-venv
 ./run.sh
 ```
 
-`run.bat` and `run.sh` create `.venv` if needed, install dependencies, open the prelaunch settings UI, and start the main app after you click **Start GPT-Connect**.
-
-The default start mode is API + ngrok tunnel. To open settings with API-only selected:
-
-```bat
-run.bat serve
-```
+Android/Termux:
 
 ```bash
-./run.sh serve
-```
-
-This repo already has a generated `.env` with SHA-256 token hashes. The raw generated tokens are in the ignored local file `localcontrol-keys.txt`.
-
-The app binds to `127.0.0.1:8765` by default. Expose it to ChatGPT only through an HTTPS tunnel or reverse proxy you control, such as a reserved ngrok domain or Cloudflare Tunnel.
-
-## Test It
-
-Open one terminal and run:
-
-```bat
-run.bat
-```
-
-```bash
+pkg update
+pkg install python git
 ./run.sh
 ```
 
-The settings page opens first on a temporary `127.0.0.1` port. Configure the API key, port, and ngrok token, then click **Start GPT-Connect**.
+The launcher opens a settings screen first. Set or randomize the API key, configure the port, add your ngrok token if you want web access, then start GPT-Connect.
 
-Open a second terminal in this folder and run:
+## Using It From ChatGPT
 
-```bat
-run.bat check
-run.bat test
+1. Start GPT-Connect on the device.
+2. Start tunnel mode so the device gets an HTTPS URL.
+3. Import `gpt-actions.openapi.yaml` into a private Custom GPT Action.
+4. Use the generated API key as the Custom GPT bearer token.
+5. Ask the GPT to inspect projects, run commands, read logs, or gather device context.
+
+Every device can have its own URL and key. A single Custom GPT can switch between devices by using the right configured action or schema.
+
+## Device Context Sync
+
+GPT-Connect does not need a central sync server. Each device keeps its own local state, projects, terminals, and logs. The Custom GPT becomes the sync layer by asking each device for current context and combining the answers in the chat.
+
+Example setup:
+
+- Desktop GPT-Connect for full project folders and build tools.
+- Laptop GPT-Connect for another repo or work environment.
+- Android/Termux GPT-Connect for phone-side scripts, files, and Termux tools.
+- One Custom GPT that can ask each device what it knows, then decide where to run the next command.
+
+## Architecture
+
+```mermaid
+flowchart LR
+    User["User in ChatGPT / Custom GPT"]
+    Action["Custom GPT Action"]
+    Tunnel["HTTPS tunnel (ngrok or reverse proxy)"]
+    Bridge["GPT-Connect local bridge"]
+    Auth["Bearer auth + config"]
+    Router["FastAPI route layer"]
+    Projects["Project registry"]
+    Workers["Command worker pool"]
+    Terminals["Persistent terminal sessions"]
+    Logs["Execution log"]
+    Device["Local device OS"]
+
+    User --> Action
+    Action --> Tunnel
+    Tunnel --> Bridge
+    Bridge --> Auth
+    Auth --> Router
+    Router --> Projects
+    Router --> Workers
+    Router --> Terminals
+    Workers --> Device
+    Terminals --> Device
+    Workers --> Logs
+    Terminals --> Logs
+    Logs --> Router
+    Router --> Action
+    Action --> User
 ```
 
-```bash
-./run.sh check
-./run.sh test
+## Request Flow
+
+```mermaid
+sequenceDiagram
+    participant GPT as Custom GPT
+    participant Tunnel as HTTPS Tunnel
+    participant App as GPT-Connect
+    participant Pool as Worker Pool
+    participant OS as Device OS
+    participant Log as Execution Log
+
+    GPT->>Tunnel: Authenticated action call
+    Tunnel->>App: Forward to local bridge
+    App->>App: Validate token and request
+    App->>Pool: Start command/job/session
+    Pool->>OS: Run cmd, PowerShell, bash, sh, or local tool
+    OS-->>Pool: stdout/stderr/exit code
+    Pool->>Log: Store tracked output
+    App-->>GPT: Return result or job id
+    GPT->>App: Poll logs when more context is needed
+    App-->>GPT: Return command/session history
 ```
 
-You can also open `http://127.0.0.1:8765/health` in a browser. It should show `auth_configured` and `approval_configured` as `true`.
+## Multi-Threaded Execution
 
-## GUI Control Panel
+GPT-Connect is optimized for many commands and tools running at the same time.
 
-Startup now shows the settings UI before the main app starts. After startup, the same control panel is also available from the running app:
+- Each shell command becomes a tracked job.
+- Jobs run through a bounded thread pool.
+- Default worker count is `max(4, CPU cores * 4)`.
+- Long-running work can run asynchronously while the GPT keeps working.
+- Output is stored in memory by job/session id so the GPT can retrieve it later.
+- Terminal sessions are persistent, so multi-step work can keep state.
 
-```text
-http://127.0.0.1:8765/ui
-```
+Override worker count:
 
-The UI uses the same bearer token as the API. It can refresh runtime config, reveal or randomize the API key, update the saved port, set the ngrok authtoken/domain/public URL, and run `auto`, PowerShell, `cmd.exe`, `bash`, or `sh` terminal sessions through the existing terminal API.
-
-Secret values are masked by default. Click **Reveal** after entering the bearer token when you need to show or copy the current API key or ngrok authtoken. Port and tunnel setting changes are saved to `.env`; port and active tunnel changes take effect on restart.
-
-## Full-Control Mode
-
-GPT-Connect now runs in full-control mode by default. Authenticated requests execute directly; delete, process-kill, secret reads, git reset, artifact overwrite/delete, and shell commands do not require a second approval step.
-
-```bat
-run.bat
-```
-
-```bash
-./run.sh
-```
-
-Bearer auth, rate limits, output truncation, redaction defaults, and in-memory execution logging still remain active. Check `http://127.0.0.1:8765/health` and look for `"full_control": true`.
-
-## Multi-Project Control
-
-Register project roots once, then use `project_id` in shell, terminal, search, and git commands instead of repeating absolute paths:
-
-```powershell
-Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8765/projects/register -Headers $headers -ContentType application/json -Body '{"project_id":"app1","name":"App One","path":"E:\\PROJECTS\\AppOne"}'
-Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8765/projects/list -Headers $headers
-Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8765/shell/run -Headers $headers -ContentType application/json -Body '{"project_id":"app1","shell":"powershell","command":"git status"}'
-Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8765/search/content -Headers $headers -ContentType application/json -Body '{"project_id":"app1","pattern":"TODO"}'
-```
-
-Ubuntu/Linux can use the same endpoints with `shell` set to `bash`, `sh`, or `auto`.
-
-If both `project_id` and a relative `cwd` or `root` are provided, the relative path is resolved inside the registered project root.
-
-Git does not have a separate API surface. Use the locally installed `git` executable through `/shell/run`, usually with `project_id` set to the registered repository root.
-
-## Worker Pool
-
-Shell commands run through a bounded worker pool. The default worker count is `max(4, CPU cores * 4)`, which lets external programs and shell commands run across available CPU cores without creating unlimited command threads. Override it with:
+Windows:
 
 ```powershell
 $env:LOCALCONTROL_MAX_SHELL_WORKERS = "32"
 ```
 
+Linux/Termux:
+
 ```bash
 export LOCALCONTROL_MAX_SHELL_WORKERS=32
 ```
 
-`/health` reports `cpu_count` and `max_shell_workers`.
+## Multi-Project Handling
 
-## Artifacts
+GPT-Connect can manage many project folders from one running bridge.
 
-Artifacts are small/medium files managed under `localcontrol-data/artifacts` and addressed by `artifact_id`. The limit defaults to 50 MB.
+Register a project once, then the GPT can refer to it by `project_id` instead of repeating paths. This makes it easier to work across multiple repos, apps, folders, or client projects.
 
-Create text, fetch a URL, or register a local file:
+```mermaid
+flowchart TD
+    GPT["Custom GPT"]
+    Registry["Project registry"]
+    P1["project_id: api"]
+    P2["project_id: frontend"]
+    P3["project_id: mobile"]
+    Jobs["Jobs and terminals"]
 
-```powershell
-$headers = @{ Authorization = "Bearer $env:LOCALCONTROL_API_KEY" }
-Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8765/artifacts/create_text -Headers $headers -ContentType application/json -Body '{"name":"note.txt","content":"hello"}'
-Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8765/artifacts/fetch_url -Headers $headers -ContentType application/json -Body '{"url":"https://example.com/file.txt"}'
-Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8765/artifacts/from_path -Headers $headers -ContentType application/json -Body '{"path":"C:\\Temp\\input.txt","copy":true}'
+    GPT --> Registry
+    Registry --> P1
+    Registry --> P2
+    Registry --> P3
+    P1 --> Jobs
+    P2 --> Jobs
+    P3 --> Jobs
 ```
 
-Write or download an artifact:
+This lets the GPT do work like:
 
-```powershell
-Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8765/artifacts/<artifact_id>/write_to_path -Headers $headers -ContentType application/json -Body '{"path":"C:\\Temp\\output.txt"}'
-Invoke-WebRequest -Uri http://127.0.0.1:8765/artifacts/<artifact_id>/download -Headers $headers -OutFile C:\Temp\downloaded.txt
-```
+- Search project A while tests run in project B.
+- Run git, build, or test commands inside the correct folder.
+- Keep separate terminal sessions per project.
+- Retrieve logs and command output by job id.
 
-Overwriting existing files, deleting artifacts, and registering local paths execute directly for authenticated callers.
+## Platform Support
 
-## Terminal Sessions
+| Platform | How to run | Shell support |
+| --- | --- | --- |
+| Windows | `run.bat` or Windows executable | PowerShell, `cmd.exe`, `auto` |
+| Ubuntu/Linux | `./run.sh` or Linux executable | `bash`, `sh`, PowerShell if installed, `auto` |
+| Android/Termux | `./run.sh` from Termux | `bash`, `sh`, Termux tools |
 
-Use persistent terminal sessions for multi-step command workflows. Every command is printed in the GPT-Connect server terminal and is also available through event polling.
+Release builds include:
 
-```powershell
-$session = Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8765/terminal/sessions -Headers $headers -ContentType application/json -Body '{"shell":"powershell","cwd":"C:\\Temp","name":"work"}'
-Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8765/terminal/sessions/$($session.session_id)/exec" -Headers $headers -ContentType application/json -Body '{"command":"Get-ChildItem"}'
-Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8765/terminal/sessions/$($session.session_id)/events" -Headers $headers -ContentType application/json -Body '{"after_event_id":0,"max_events":100}'
-```
+- `GPT-Connect-windows-x64-standalone.exe`
+- `GPT-Connect-windows-x64-standalone.zip`
+- `GPT-Connect-linux-x64-standalone`
+- `GPT-Connect-linux-x64-standalone.tar.gz`
 
-For interactive commands, send more input with `/terminal/sessions/{session_id}/stdin`. Terminate finished sessions with `/terminal/sessions/{session_id}/terminate`.
+## Local UI
 
-Supported shell values are `auto`, `powershell`, `cmd`, `bash`, and `sh`. `auto` resolves to PowerShell on Windows and bash on Linux.
-
-## Execution Logs
-
-All `/shell/run` commands execute through the job manager, including synchronous calls. Each command has a `job_id`, and command, stdout, stderr, stdin, and system events are stored in a unified in-memory execution log.
-
-Poll recent events:
-
-```powershell
-Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8765/execution/logs -Headers $headers -ContentType application/json -Body '{"after_event_id":0,"max_events":100}'
-```
-
-Poll one command or terminal session:
-
-```powershell
-Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8765/execution/logs -Headers $headers -ContentType application/json -Body '{"run_id":"<job_id-or-session_id>","max_events":100}'
-```
-
-## Architecture
-
-The app is organized around a small FastAPI composition layer and focused backend operation modules:
+After startup, the control panel is available on the device:
 
 ```text
-localcontrol/
-  api/
-    app.py              FastAPI app factory, middleware, exception handlers
-    deps.py             Shared request helpers
-    routes/             Route modules grouped by API domain
-  *_ops.py              Filesystem, shell, terminal, process, artifact, and system operations
-  execution_log.py      Unified command/session event log
-  project_ops.py        Multi-project registry and path resolution
-  models.py             Pydantic request/response schemas
-  main.py               Compatibility import for localcontrol.main:app
+http://127.0.0.1:8765/ui
 ```
 
-Routes stay thin: they validate requests and call one operation module. Runtime execution logic remains outside the API package so command handling, terminal sessions, project routing, and logging can evolve independently.
+Use it to change the API key, port, ngrok token, tunnel settings, and open terminal sessions.
 
-## Custom GPT Setup
+## Safety Model
 
-1. Export the curated schema:
+GPT-Connect is designed for a trusted personal environment.
 
-   ```powershell
-   .\.venv\Scripts\python.exe .\scripts\export_openapi.py --server-url https://YOUR-RESERVED-NGROK-DOMAIN.ngrok-free.app
-   ```
-
-   On Ubuntu/Linux:
-
-   ```bash
-   ./.venv/bin/python scripts/export_openapi.py --server-url https://YOUR-RESERVED-NGROK-DOMAIN.ngrok-free.app
-   ```
-
-2. In your Custom GPT action settings, import `gpt-actions.openapi.yaml` or paste this public schema URL when the tunnel is running:
-
-   ```text
-   https://oblong-bonus-retrace.ngrok-free.dev/gpt-actions.openapi.yaml
-   ```
-
-   Short alias:
-
-   ```text
-   https://oblong-bonus-retrace.ngrok-free.dev/gpt-actions.yml
-   ```
-
-3. Set authentication to API key / bearer token using `LOCALCONTROL_API_KEY` from `localcontrol-keys.txt`.
-4. Register project roots with `/projects/register` and use `/execution/logs` after `/shell/run` or terminal operations to retrieve tracked output.
-
-The curated GPT schema is capped at 30 operations for the Custom GPT importer. The local API still exposes additional routes such as process kill/list and legacy approval inspection for local/manual compatibility.
-
-## Public ngrok Tunnel
-
-Start GPT-Connect and ngrok together with either command:
-
-```bat
-run.bat tunnel
-ngrok.bat
-```
-
-```bash
-./run.sh tunnel
-```
-
-Tunnel mode starts GPT-Connect in the background, waits for `http://127.0.0.1:8765/health`, starts ngrok, detects the public HTTPS URL, regenerates `gpt-actions.openapi.yaml` for that URL, and keeps both processes alive until the tunnel exits.
-
-If ngrok is not installed, `run.bat tunnel` downloads the Windows ngrok ZIP and installs `ngrok.exe` locally under `.local-tools\ngrok\`. On Ubuntu/Linux, `./run.sh tunnel` downloads the Linux ngrok archive and installs `ngrok` under `.local-tools/ngrok/`. That folder is ignored by git.
-
-ngrok requires an account authtoken. Tunnel mode uses `LOCALCONTROL_NGROK_AUTHTOKEN` or `NGROK_AUTHTOKEN` when set; otherwise it prompts and saves the token with `ngrok config add-authtoken`.
-
-```powershell
-$env:LOCALCONTROL_NGROK_AUTHTOKEN = "paste-your-ngrok-token-here"
-```
-
-```bash
-export LOCALCONTROL_NGROK_AUTHTOKEN="paste-your-ngrok-token-here"
-```
-
-For a reserved ngrok domain, set one of these before starting:
-
-```powershell
-$env:LOCALCONTROL_NGROK_DOMAIN = "oblong-bonus-retrace.ngrok-free.dev"
-# or:
-$env:LOCALCONTROL_PUBLIC_URL = "https://oblong-bonus-retrace.ngrok-free.dev"
-```
-
-```bash
-export LOCALCONTROL_NGROK_DOMAIN="oblong-bonus-retrace.ngrok-free.dev"
-# or:
-export LOCALCONTROL_PUBLIC_URL="https://oblong-bonus-retrace.ngrok-free.dev"
-```
-
-Optional:
-
-```powershell
-$env:LOCALCONTROL_NGROK_EXE = "C:\Tools\ngrok.exe"
-$env:LOCALCONTROL_NGROK_DOWNLOAD_URL = "https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-windows-amd64.zip"
-$env:LOCALCONTROL_NGROK_API_PORT = "4040"
-$env:LOCALCONTROL_NGROK_URL_TIMEOUT_SECONDS = "300"
-```
-
-```bash
-export LOCALCONTROL_NGROK_EXE="/opt/ngrok/ngrok"
-export LOCALCONTROL_NGROK_DOWNLOAD_URL="https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz"
-export LOCALCONTROL_NGROK_API_PORT=4040
-export LOCALCONTROL_NGROK_URL_TIMEOUT_SECONDS=300
-```
-
-If no reserved domain is configured, tunnel mode uses ngrok's local API to read the random public HTTPS URL and exports the GPT schema for that URL. Keep the tunnel window open while your Custom GPT is using the API.
-
-If ngrok rejects the token, exits early, or never publishes a public URL, the launcher prompts for a fresh token and retries up to three times. Corrected tokens are saved back to `.env` as `LOCALCONTROL_NGROK_AUTHTOKEN` and to ngrok's own config. If ngrok stays at `Session Status connecting`, the launcher waits up to `LOCALCONTROL_NGROK_URL_TIMEOUT_SECONDS` and prints the last local API status. Usually that means ngrok is still negotiating, the account/token has a problem, or outbound network/firewall access is blocked. You can raise the timeout or set `LOCALCONTROL_PUBLIC_URL` / `LOCALCONTROL_NGROK_DOMAIN` when you already know the public URL.
-
-## Full-Control Execution Model
-
-- Every control endpoint requires bearer authentication.
-- Authenticated control operations execute directly without risk assessment or approval prompts.
-- Deletes execute directly. No quarantine directory is maintained.
-- Shell calls run through a CPU-aware worker pool with explicit shell choice, project/cwd, timeout, and output size limits.
-- `cmd.exe`, PowerShell, bash, and sh launch with automation-friendly flags.
-- Outputs are tracked in `/execution/logs`, truncated in direct responses, and common secrets are redacted unless `include_secrets=true`.
-- Persistent audit JSONL logging is disabled; command/session output remains available in memory through `/execution/logs`.
-
-## Windows Startup
-
-After installing dependencies and creating `.env`, you can register a logon task:
-
-```powershell
-.\scripts\install-startup-task.ps1
-```
-
-To start the API and ngrok automatically at logon:
-
-```powershell
-.\scripts\install-startup-task.ps1 -Tunnel -NgrokDomain oblong-bonus-retrace.ngrok-free.dev
-```
-
-For unattended startup, set the token before registering the task or pass it once:
-
-```powershell
-.\scripts\install-startup-task.ps1 -Tunnel -NgrokDomain oblong-bonus-retrace.ngrok-free.dev -NgrokAuthtoken "paste-your-ngrok-token-here"
-```
-
-## Windows EXE Bundle
-
-Build a distributable Windows executable with PyInstaller:
-
-```bat
-run.bat build-exe
-```
-
-That creates:
-
-```text
-dist\GPT-Connect\GPT-Connect.exe
-```
-
-The build bundles `ngrok.exe` by default. If ngrok is not already available, the build downloads it to `.local-tools\ngrok\ngrok.exe` first, then includes it in the PyInstaller output.
-
-Double-clicking the packaged executable starts tunnel mode by default. Use the executable directly:
-
-```powershell
-.\dist\GPT-Connect\GPT-Connect.exe
-.\dist\GPT-Connect\GPT-Connect.exe tunnel
-.\dist\GPT-Connect\GPT-Connect.exe schema --server-url https://YOUR-NGROK-DOMAIN.ngrok-free.app
-```
-
-The exe reads `.env` from the current working directory, and also from the executable folder when launched from the bundled `dist\GPT-Connect` directory. It can still auto-download ngrok into `.local-tools\ngrok` when tunnel mode needs it.
-
-For a single-file executable:
-
-```powershell
-.\scripts\build-exe.ps1 -OneFile
-```
-
-That creates `dist\GPT-Connect.exe`; double-clicking it also starts tunnel mode. To build without bundling ngrok:
-
-```powershell
-.\scripts\build-exe.ps1 -OneFile -NoBundleNgrok
-```
-
-## Linux Executable Bundle
-
-On Ubuntu/Linux, build a one-file executable with PyInstaller:
-
-```bash
-./scripts/build-exe.sh --onefile
-```
-
-That creates:
-
-```text
-dist/GPT-Connect
-```
-
-The build bundles the Linux `ngrok` binary by default. If ngrok is not already available, the build downloads it to `.local-tools/ngrok/ngrok` first, then includes it in the PyInstaller output.
-
-Run it directly:
-
-```bash
-./dist/GPT-Connect
-./dist/GPT-Connect tunnel
-./dist/GPT-Connect schema --server-url https://YOUR-NGROK-DOMAIN.ngrok-free.app
-```
-
-To build without bundling ngrok:
-
-```bash
-./scripts/build-exe.sh --onefile --no-bundle-ngrok
-```
-
-## GitHub Release Build
-
-The repository includes a GitHub Actions workflow that builds standalone Windows x64 and Linux x64 executables with bundled ngrok and publishes release assets.
-
-Create a release by pushing a version tag:
-
-```powershell
-git tag v0.1.0
-git push origin v0.1.0
-```
-
-You can also run **Release Standalone Executables** manually from the GitHub Actions tab. The release contains:
-
-```text
-GPT-Connect-windows-x64-standalone.exe
-GPT-Connect-windows-x64-standalone.zip
-GPT-Connect-windows-x64-standalone.exe.sha256
-GPT-Connect-windows-x64-standalone.zip.sha256
-GPT-Connect-linux-x64-standalone
-GPT-Connect-linux-x64-standalone.tar.gz
-GPT-Connect-linux-x64-standalone.sha256
-GPT-Connect-linux-x64-standalone.tar.gz.sha256
-```
-
-The released executables are one-file PyInstaller builds. They include ngrok and start tunnel mode by default when launched without arguments.
+- It requires bearer authentication.
+- It binds locally by default.
+- Public access should go through HTTPS tunnel or reverse proxy.
+- The API key should be treated like a password.
+- Commands run with the permissions of the user account that started GPT-Connect.
+- Android/Termux access is limited by Android permissions unless you add more privileges yourself.
 
 ## Development
 
+Windows:
+
 ```powershell
 .\.venv\Scripts\python.exe -m pytest
-.\.venv\Scripts\python.exe .\scripts\export_openapi.py
+.\.venv\Scripts\python.exe scripts\export_openapi.py
 ```
+
+Linux/Termux:
 
 ```bash
 ./.venv/bin/python -m pytest
