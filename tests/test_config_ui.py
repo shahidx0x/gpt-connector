@@ -76,5 +76,5 @@ def test_config_update_port_reports_restart_required(client, auth_headers, monke
 def test_ui_index_is_served(client):
     response = client.get("/ui")
     assert response.status_code == 200
-    assert "LocalControl" in response.text
+    assert "GPT-Connect" in response.text
     assert "/config/get" in response.text

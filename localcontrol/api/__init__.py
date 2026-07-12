@@ -1,2 +1,1 @@
-"""HTTP API package for LocalControl."""
-
+"""HTTP API package for GPT-Connect."""

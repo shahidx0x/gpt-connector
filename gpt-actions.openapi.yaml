@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
-  title: Windows LocalControl GPT Actions
-  description: Private Custom GPT action schema for a single-user Windows LocalControl
+  title: Windows GPT-Connect Actions
+  description: Private Custom GPT action schema for a single-user Windows GPT-Connect
     bridge. Full-control execution mode is enabled; use /execution/logs to retrieve
     command and terminal output.
   version: 0.1.1

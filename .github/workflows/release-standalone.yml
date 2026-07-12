@@ -31,7 +31,7 @@ jobs:
       run:
         shell: pwsh
     env:
-      ARTIFACT_BASENAME: LocalControl-windows-x64-standalone
+      ARTIFACT_BASENAME: GPT-Connect-windows-x64-standalone
       PYTHON_VERSION: "3.12"
 
     steps:
@@ -58,14 +58,14 @@ jobs:
 
       - name: Smoke test EXE
         run: |
-          .\dist\LocalControl.exe --help
-          .\dist\LocalControl.exe --version
-          .\dist\LocalControl.exe schema --server-url https://example.test --output .commandcode\exe-schema-test.yaml
+          .\dist\GPT-Connect.exe --help
+          .\dist\GPT-Connect.exe --version
+          .\dist\GPT-Connect.exe schema --server-url https://example.test --output .commandcode\exe-schema-test.yaml
           Remove-Item -LiteralPath .commandcode\exe-schema-test.yaml -Force
 
       - name: Confirm ngrok is bundled
         run: |
-          $contents = python -m PyInstaller.utils.cliutils.archive_viewer -l -b .\dist\LocalControl.exe
+          $contents = python -m PyInstaller.utils.cliutils.archive_viewer -l -b .\dist\GPT-Connect.exe
           if (-not ($contents | Select-String -SimpleMatch "ngrok.exe")) {
             throw "ngrok.exe was not found inside the bundled PyInstaller executable."
           }
@@ -79,7 +79,7 @@ jobs:
           $exeChecksum = "$exeAsset.sha256"
           $zipChecksum = "$zipAsset.sha256"
 
-          Copy-Item -LiteralPath .\dist\LocalControl.exe -Destination $exeAsset -Force
+          Copy-Item -LiteralPath .\dist\GPT-Connect.exe -Destination $exeAsset -Force
           Compress-Archive -LiteralPath $exeAsset -DestinationPath $zipAsset -Force
 
           $exeHash = (Get-FileHash -LiteralPath $exeAsset -Algorithm SHA256).Hash.ToLowerInvariant()
@@ -92,7 +92,7 @@ jobs:
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: LocalControl-windows-x64-standalone
+          name: GPT-Connect-windows-x64-standalone
           path: release/*
           if-no-files-found: error
 
@@ -111,7 +111,7 @@ jobs:
           }
 
           "tag_name=$tag" >> $env:GITHUB_OUTPUT
-          "release_title=LocalControl $tag" >> $env:GITHUB_OUTPUT
+          "release_title=GPT-Connect $tag" >> $env:GITHUB_OUTPUT
 
       - name: Create or update GitHub Release
         if: github.event_name == 'push' || inputs.publish_release
@@ -121,11 +121,11 @@ jobs:
           RELEASE_TITLE: ${{ steps.release_meta.outputs.release_title }}
         run: |
           $notes = @"
-          Standalone Windows x64 LocalControl build.
+          Standalone Windows x64 GPT-Connect build.
 
           Assets:
-          - LocalControl-windows-x64-standalone.exe: one-file PyInstaller executable.
-          - LocalControl-windows-x64-standalone.zip: zipped copy of the same executable.
+          - GPT-Connect-windows-x64-standalone.exe: one-file PyInstaller executable.
+          - GPT-Connect-windows-x64-standalone.zip: zipped copy of the same executable.
           - *.sha256: SHA-256 checksums.
 
           The executable bundles ngrok and starts tunnel mode by default when launched without arguments. The first tunnel run still requires a valid ngrok authtoken.

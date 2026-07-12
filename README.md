@@ -1,4 +1,4 @@
-# Windows LocalControl GPT Bridge
+# GPT-Connect
 
 Private FastAPI bridge for letting a Custom GPT call typed Windows control endpoints: file I/O, search, shell commands, process inspection, terminal sessions, and execution logs.
 
@@ -8,7 +8,7 @@ Private FastAPI bridge for letting a Custom GPT call typed Windows control endpo
 run.bat
 ```
 
-`run.bat` creates `.venv` if needed, installs dependencies, opens the prelaunch settings UI, and starts the main app after you click **Start LocalControl**.
+`run.bat` creates `.venv` if needed, installs dependencies, opens the prelaunch settings UI, and starts the main app after you click **Start GPT-Connect**.
 
 The default start mode is API + ngrok tunnel. To open settings with API-only selected:
 
@@ -28,7 +28,7 @@ Open one terminal and run:
 run.bat
 ```
 
-The settings page opens first on a temporary `127.0.0.1` port. Configure the API key, port, and ngrok token, then click **Start LocalControl**.
+The settings page opens first on a temporary `127.0.0.1` port. Configure the API key, port, and ngrok token, then click **Start GPT-Connect**.
 
 Open a second terminal in this folder and run:
 
@@ -53,7 +53,7 @@ Secret values are masked by default. Click **Reveal** after entering the bearer 
 
 ## Full-Control Mode
 
-LocalControl now runs in full-control mode by default. Authenticated requests execute directly; delete, process-kill, secret reads, git reset, artifact overwrite/delete, and shell commands do not require a second approval step.
+GPT-Connect now runs in full-control mode by default. Authenticated requests execute directly; delete, process-kill, secret reads, git reset, artifact overwrite/delete, and shell commands do not require a second approval step.
 
 ```bat
 run.bat
@@ -110,7 +110,7 @@ Overwriting existing files, deleting artifacts, and registering local paths exec
 
 ## Terminal Sessions
 
-Use persistent terminal sessions for multi-step command workflows. Every command is printed in the LocalControl server terminal and is also available through event polling.
+Use persistent terminal sessions for multi-step command workflows. Every command is printed in the GPT-Connect server terminal and is also available through event polling.
 
 ```powershell
 $session = Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8765/terminal/sessions -Headers $headers -ContentType application/json -Body '{"shell":"powershell","cwd":"C:\\Temp","name":"work"}'
@@ -182,14 +182,14 @@ The curated GPT schema is capped at 30 operations for the Custom GPT importer. T
 
 ## Public ngrok Tunnel
 
-Start LocalControl and ngrok together with either command:
+Start GPT-Connect and ngrok together with either command:
 
 ```bat
 run.bat tunnel
 ngrok.bat
 ```
 
-Tunnel mode starts LocalControl in the background, waits for `http://127.0.0.1:8765/health`, starts ngrok, detects the public HTTPS URL, regenerates `gpt-actions.openapi.yaml` for that URL, and keeps both processes alive until the tunnel exits.
+Tunnel mode starts GPT-Connect in the background, waits for `http://127.0.0.1:8765/health`, starts ngrok, detects the public HTTPS URL, regenerates `gpt-actions.openapi.yaml` for that URL, and keeps both processes alive until the tunnel exits.
 
 If ngrok is not installed, `run.bat tunnel` downloads the Windows ngrok ZIP and installs `ngrok.exe` locally under `.local-tools\ngrok\`. That folder is ignored by git.
 
@@ -261,7 +261,7 @@ run.bat build-exe
 That creates:
 
 ```text
-dist\LocalControl\LocalControl.exe
+dist\GPT-Connect\GPT-Connect.exe
 ```
 
 The build bundles `ngrok.exe` by default. If ngrok is not already available, the build downloads it to `.local-tools\ngrok\ngrok.exe` first, then includes it in the PyInstaller output.
@@ -269,12 +269,12 @@ The build bundles `ngrok.exe` by default. If ngrok is not already available, the
 Double-clicking the packaged executable starts tunnel mode by default. Use the executable directly:
 
 ```powershell
-.\dist\LocalControl\LocalControl.exe
-.\dist\LocalControl\LocalControl.exe tunnel
-.\dist\LocalControl\LocalControl.exe schema --server-url https://YOUR-NGROK-DOMAIN.ngrok-free.app
+.\dist\GPT-Connect\GPT-Connect.exe
+.\dist\GPT-Connect\GPT-Connect.exe tunnel
+.\dist\GPT-Connect\GPT-Connect.exe schema --server-url https://YOUR-NGROK-DOMAIN.ngrok-free.app
 ```
 
-The exe reads `.env` from the current working directory, and also from the executable folder when launched from the bundled `dist\LocalControl` directory. It can still auto-download ngrok into `.local-tools\ngrok` when tunnel mode needs it.
+The exe reads `.env` from the current working directory, and also from the executable folder when launched from the bundled `dist\GPT-Connect` directory. It can still auto-download ngrok into `.local-tools\ngrok` when tunnel mode needs it.
 
 For a single-file executable:
 
@@ -282,7 +282,7 @@ For a single-file executable:
 .\scripts\build-exe.ps1 -OneFile
 ```
 
-That creates `dist\LocalControl.exe`; double-clicking it also starts tunnel mode. To build without bundling ngrok:
+That creates `dist\GPT-Connect.exe`; double-clicking it also starts tunnel mode. To build without bundling ngrok:
 
 ```powershell
 .\scripts\build-exe.ps1 -OneFile -NoBundleNgrok
@@ -302,10 +302,10 @@ git push origin v0.1.0
 You can also run **Release Standalone Windows EXE** manually from the GitHub Actions tab. The release contains:
 
 ```text
-LocalControl-windows-x64-standalone.exe
-LocalControl-windows-x64-standalone.zip
-LocalControl-windows-x64-standalone.exe.sha256
-LocalControl-windows-x64-standalone.zip.sha256
+GPT-Connect-windows-x64-standalone.exe
+GPT-Connect-windows-x64-standalone.zip
+GPT-Connect-windows-x64-standalone.exe.sha256
+GPT-Connect-windows-x64-standalone.zip.sha256
 ```
 
 The released executable is the one-file PyInstaller build. It includes `ngrok.exe` and starts tunnel mode by default when launched without arguments.

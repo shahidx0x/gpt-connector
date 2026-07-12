@@ -1,4 +1,4 @@
-"""Windows LocalControl GPT bridge."""
+"""Windows GPT-Connect bridge."""
 
 __all__ = ["__version__"]
 

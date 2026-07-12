@@ -28,7 +28,7 @@ def test_gpt_actions_yaml_is_public(client):
     response = client.get("/gpt-actions.openapi.yaml")
     assert response.status_code == 200
     assert "application/yaml" in response.headers["content-type"]
-    assert b"Windows LocalControl GPT Actions" in response.content
+    assert b"Windows GPT-Connect Actions" in response.content
 
 
 def test_curated_gpt_schema_stays_under_30_operations():

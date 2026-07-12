@@ -113,7 +113,7 @@ function Wait-LocalControl {
 
     for ($attempt = 0; $attempt -lt 80; $attempt++) {
         if ($Process.HasExited) {
-            throw "LocalControl exited early with code $($Process.ExitCode)."
+            throw "GPT-Connect exited early with code $($Process.ExitCode)."
         }
         try {
             Invoke-RestMethod -Uri $Url -TimeoutSec 2 | Out-Null
@@ -122,7 +122,7 @@ function Wait-LocalControl {
             Start-Sleep -Milliseconds 500
         }
     }
-    throw "Timed out waiting for LocalControl health at $Url."
+    throw "Timed out waiting for GPT-Connect health at $Url."
 }
 
 function Wait-NgrokStarted {
@@ -466,7 +466,7 @@ function Start-Tunnel {
     $ngrokProcess = $null
 
     try {
-        Write-Host "Starting LocalControl API..."
+        Write-Host "Starting GPT-Connect API..."
         $apiArgs = @("-m", "uvicorn", "localcontrol.main:app", "--host", $BindHost, "--port", "$BindPort")
         $apiProcess = Start-Process -FilePath $Python -ArgumentList $apiArgs -WorkingDirectory $repo -PassThru -WindowStyle Hidden
         Wait-LocalControl -Url $healthUrl -Process $apiProcess
@@ -511,11 +511,11 @@ function Start-Tunnel {
         }
 
         Write-Host ""
-        Write-Host "LocalControl: $localBaseUrl"
+        Write-Host "GPT-Connect: $localBaseUrl"
         Write-Host "Public URL:   $resolvedPublicUrl"
         Write-Host "Schema URL:   $resolvedPublicUrl/gpt-actions.openapi.yaml"
         Write-Host ""
-        Write-Host "Leave this window open while your GPT is using LocalControl. Press Ctrl+C to stop."
+        Write-Host "Leave this window open while your GPT is using GPT-Connect. Press Ctrl+C to stop."
         Wait-Process -Id $ngrokProcess.Id
     } finally {
         if ($ngrokProcess -and -not $ngrokProcess.HasExited) {

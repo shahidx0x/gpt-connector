@@ -53,9 +53,9 @@ if not exist "%PY%" (
     python -m venv .venv || exit /b 1
 )
 
-"%PY%" -m pip show windows-localcontrol >nul 2>nul
+"%PY%" -m pip show gpt-connect >nul 2>nul
 if errorlevel 1 (
-    echo Installing LocalControl dependencies...
+    echo Installing GPT-Connect dependencies...
     "%PY%" -m pip install -e ".[dev]" || exit /b 1
 )
 exit /b 0
@@ -63,7 +63,7 @@ exit /b 0
 :launch
 call :ensure || exit /b 1
 call :stopport
-echo Opening LocalControl settings before startup...
+echo Opening GPT-Connect settings before startup...
 set "CLI_ARGS=launch --mode %APP_MODE%"
 if defined ALLOW_ALL set "CLI_ARGS=%CLI_ARGS% --allow-all"
 "%PY%" -m localcontrol.cli %CLI_ARGS%
@@ -76,7 +76,7 @@ if defined ALLOW_ALL (
     set "LOCALCONTROL_ALLOW_ALL=1"
     echo WARNING: approval prompts are disabled for dangerous operations ^(--allow-all^).
 )
-echo Starting Windows LocalControl GPT Bridge...
+echo Starting Windows GPT-Connect Bridge...
 echo URL: http://127.0.0.1:%PORT%
 echo Health: http://127.0.0.1:%PORT%/health
 echo.
@@ -90,7 +90,7 @@ call :stopport
 if defined ALLOW_ALL (
     set "LOCALCONTROL_ALLOW_ALL=1"
 )
-echo Starting LocalControl with ngrok tunnel...
+echo Starting GPT-Connect with ngrok tunnel...
 set "PS_ARGS=-NoProfile -ExecutionPolicy Bypass -File scripts\run.ps1 -Tunnel -HostName 127.0.0.1 -Port %PORT%"
 if defined ALLOW_ALL set "PS_ARGS=%PS_ARGS% -AllowAll"
 powershell.exe %PS_ARGS%
@@ -151,6 +151,6 @@ echo   run.bat stop     Stop any process listening on the configured port
 echo   run.bat check    Test health and authenticated system/info endpoint
 echo   run.bat test     Run automated tests
 echo   run.bat schema   Regenerate gpt-actions.openapi.yaml
-echo   run.bat build-exe Build dist\LocalControl\LocalControl.exe
+echo   run.bat build-exe Build dist\GPT-Connect\GPT-Connect.exe
 echo   run.bat help     Show this help
 exit /b 0

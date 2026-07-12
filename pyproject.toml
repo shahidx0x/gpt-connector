@@ -3,7 +3,7 @@ requires = ["setuptools>=69"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "windows-localcontrol"
+name = "gpt-connect"
 version = "0.1.1"
 description = "Private FastAPI bridge for controlling a Windows machine from a Custom GPT action."
 requires-python = ">=3.11"
@@ -14,6 +14,7 @@ dependencies = [
 ]
 
 [project.scripts]
+gpt-connect = "localcontrol.cli:main"
 localcontrol = "localcontrol.cli:main"
 
 [project.optional-dependencies]

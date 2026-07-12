@@ -69,7 +69,7 @@ def _html(nonce: str, default_mode: Mode) -> str:
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>LocalControl Launcher</title>
+  <title>GPT-Connect Launcher</title>
   <style>
     :root {{
       color-scheme: dark;
@@ -186,7 +186,7 @@ def _html(nonce: str, default_mode: Mode) -> str:
   <main>
     <header>
       <div>
-        <h1>LocalControl Settings</h1>
+        <h1>GPT-Connect Settings</h1>
         <div class="sub">Configure first. Start the main app after settings are ready.</div>
       </div>
       <button id="refresh" type="button">Refresh</button>
@@ -245,7 +245,7 @@ def _html(nonce: str, default_mode: Mode) -> str:
         <div class="message" id="message">Waiting for settings.</div>
         <div class="actions">
           <button id="save" type="button">Save Settings</button>
-          <button id="start" type="button" class="primary">Start LocalControl</button>
+          <button id="start" type="button" class="primary">Start GPT-Connect</button>
           <button id="cancel" type="button" class="danger">Cancel</button>
         </div>
       </section>
@@ -322,7 +322,7 @@ def _html(nonce: str, default_mode: Mode) -> str:
     async function start() {{
       try {{
         await request("start", collect(false));
-        setMessage("Starting LocalControl. You can close this browser tab.", "ok");
+        setMessage("Starting GPT-Connect. You can close this browser tab.", "ok");
       }} catch (error) {{
         setMessage(error.message, "error");
       }}
@@ -372,7 +372,7 @@ def run_prelaunch_ui(default_mode: Mode, *, open_browser: bool = True) -> Launch
     state = _LauncherState(default_mode)
 
     class Handler(BaseHTTPRequestHandler):
-        server_version = "LocalControlLauncher/1.0"
+        server_version = "GPTConnectLauncher/1.0"
 
         def log_message(self, format: str, *args: Any) -> None:
             return
@@ -451,8 +451,8 @@ def run_prelaunch_ui(default_mode: Mode, *, open_browser: bool = True) -> Launch
     server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
     url = f"http://127.0.0.1:{server.server_port}/{state.nonce}"
     print()
-    print(f"LocalControl settings UI: {url}")
-    print("Configure settings in the browser, then click Start LocalControl.")
+    print(f"GPT-Connect settings UI: {url}")
+    print("Configure settings in the browser, then click Start GPT-Connect.")
     if open_browser:
         webbrowser.open(url)
     try:

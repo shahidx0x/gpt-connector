@@ -81,13 +81,13 @@ def _wait_health(url: str, process: subprocess.Popen, timeout_seconds: int = 40)
     deadline = time.monotonic() + timeout_seconds
     while time.monotonic() < deadline:
         if process.poll() is not None:
-            raise RuntimeError(f"LocalControl exited early with code {process.returncode}.")
+            raise RuntimeError(f"GPT-Connect exited early with code {process.returncode}.")
         try:
             _http_json(url)
             return
         except Exception:
             time.sleep(0.5)
-    raise RuntimeError(f"Timed out waiting for LocalControl health at {url}.")
+    raise RuntimeError(f"Timed out waiting for GPT-Connect health at {url}.")
 
 
 def _is_windows_app_alias(path: str | None) -> bool:
@@ -355,7 +355,7 @@ def tunnel_command(args: argparse.Namespace) -> int:
     api_process: subprocess.Popen | None = None
     ngrok_process: subprocess.Popen | None = None
     try:
-        print("Starting LocalControl API...")
+        print("Starting GPT-Connect API...")
         creationflags = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
         api_process = subprocess.Popen(api_cmd, cwd=Path.cwd(), creationflags=creationflags)
         _wait_health(f"{local_base_url}/health", api_process)
@@ -393,11 +393,11 @@ def tunnel_command(args: argparse.Namespace) -> int:
         output = export_schema(resolved_public_url, Path.cwd() / "gpt-actions.openapi.yaml")
         print(f"Wrote {output}")
         print()
-        print(f"LocalControl: {local_base_url}")
+        print(f"GPT-Connect: {local_base_url}")
         print(f"Public URL:   {resolved_public_url}")
         print(f"Schema URL:   {resolved_public_url}/gpt-actions.openapi.yaml")
         print()
-        print("Leave this window open while your GPT is using LocalControl. Press Ctrl+C to stop.")
+        print("Leave this window open while your GPT is using GPT-Connect. Press Ctrl+C to stop.")
         ngrok_process.wait()
         return ngrok_process.returncode or 0
     finally:
@@ -418,7 +418,7 @@ def launch_command(args: argparse.Namespace) -> int:
 
     result = run_prelaunch_ui(args.mode, open_browser=not args.no_browser)
     if result.action != "start":
-        print("LocalControl startup canceled.")
+        print("GPT-Connect startup canceled.")
         return 0
 
     next_args = argparse.Namespace(
@@ -441,8 +441,8 @@ def launch_command(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="LocalControl", description="Windows LocalControl GPT Bridge")
-    parser.add_argument("--version", action="version", version=f"LocalControl {__version__}")
+    parser = argparse.ArgumentParser(prog="GPT-Connect", description="Windows GPT-Connect Bridge")
+    parser.add_argument("--version", action="version", version=f"GPT-Connect {__version__}")
     subparsers = parser.add_subparsers(dest="command")
 
     serve = subparsers.add_parser("serve", help="Start the API server.")
@@ -471,7 +471,7 @@ def build_parser() -> argparse.ArgumentParser:
     schema.add_argument("--output", default=str(Path.cwd() / "gpt-actions.openapi.yaml"))
     schema.set_defaults(func=schema_command)
 
-    launch = subparsers.add_parser("launch", help="Open settings UI first, then start LocalControl.")
+    launch = subparsers.add_parser("launch", help="Open settings UI first, then start GPT-Connect.")
     launch.add_argument("--mode", choices=["serve", "tunnel"], default="tunnel")
     launch.add_argument("--host", default=None)
     launch.add_argument("--allow-all", action="store_true")

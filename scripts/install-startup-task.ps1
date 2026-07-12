@@ -1,5 +1,5 @@
 param(
-    [string]$TaskName = "LocalControl GPT Bridge",
+    [string]$TaskName = "GPT-Connect Bridge",
     [switch]$Tunnel,
     [string]$NgrokDomain,
     [string]$PublicUrl,
@@ -52,5 +52,5 @@ $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument $arguments
 $trigger = New-ScheduledTaskTrigger -AtLogOn
 $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DisallowStartIfOnBatteries:$false -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1)
 
-Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger -Settings $settings -Description "Starts the LocalControl FastAPI bridge at logon." -Force | Out-Null
+Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger -Settings $settings -Description "Starts the GPT-Connect FastAPI bridge at logon." -Force | Out-Null
 Write-Host "Installed startup task: $TaskName"

@@ -122,7 +122,7 @@ def fetch_url_artifact(payload: ArtifactFetchUrlRequest) -> ArtifactInfo:
     if parsed.scheme not in {"http", "https"}:
         raise LocalControlError("unsupported_url_scheme", "Only http and https URLs are supported.", status_code=422)
     limit = get_settings().max_artifact_bytes
-    request = urllib.request.Request(payload.url, headers={"User-Agent": "LocalControl/0.1"})
+    request = urllib.request.Request(payload.url, headers={"User-Agent": "GPT-Connect/0.1"})
     try:
         with urllib.request.urlopen(request, timeout=30) as response:
             content_length = response.headers.get("Content-Length")

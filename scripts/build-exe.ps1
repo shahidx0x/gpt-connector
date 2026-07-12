@@ -105,7 +105,7 @@ $args = @(
     "--clean",
     $mode,
     "--console",
-    "--name", "LocalControl",
+    "--name", "GPT-Connect",
     "--distpath", "dist",
     "--workpath", "build\pyinstaller-work",
     "--specpath", "build\pyinstaller-spec",
@@ -138,7 +138,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 if ($OneFile) {
-    Write-Host "Built: $repo\dist\LocalControl.exe"
+    Write-Host "Built: $repo\dist\GPT-Connect.exe"
 } else {
-    Write-Host "Built: $repo\dist\LocalControl\LocalControl.exe"
+    Write-Host "Built: $repo\dist\GPT-Connect\GPT-Connect.exe"
 }

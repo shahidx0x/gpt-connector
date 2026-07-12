@@ -13,7 +13,7 @@ from localcontrol.models import ErrorResponse
 
 def create_app() -> FastAPI:
     app = FastAPI(
-        title="Windows LocalControl GPT Bridge",
+        title="Windows GPT-Connect Bridge",
         version=__version__,
         description="Private Windows control API intended for a single Custom GPT Action.",
         docs_url=None,
