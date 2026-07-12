@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from . import approvals, artifacts, execution, filesystem, jobs, process, projects, search, shell, system, terminal
+from . import approvals, artifacts, config, execution, filesystem, jobs, process, projects, search, shell, system, terminal, ui
 
 routers: tuple[APIRouter, ...] = (
+    ui.router,
     system.router,
+    config.router,
     filesystem.router,
     artifacts.router,
     search.router,
@@ -17,4 +19,3 @@ routers: tuple[APIRouter, ...] = (
     process.router,
     approvals.router,
 )
-

@@ -8,12 +8,12 @@ Private FastAPI bridge for letting a Custom GPT call typed Windows control endpo
 run.bat
 ```
 
-`run.bat` creates `.venv` if needed, installs dependencies, and starts the API at `http://127.0.0.1:8765`.
+`run.bat` creates `.venv` if needed, installs dependencies, opens the prelaunch settings UI, and starts the main app after you click **Start LocalControl**.
 
-To start the API and public ngrok tunnel together:
+The default start mode is API + ngrok tunnel. To open settings with API-only selected:
 
 ```bat
-run.bat tunnel
+run.bat serve
 ```
 
 This repo already has a generated `.env` with SHA-256 token hashes. The raw generated tokens are in the ignored local file `localcontrol-keys.txt`.
@@ -28,6 +28,8 @@ Open one terminal and run:
 run.bat
 ```
 
+The settings page opens first on a temporary `127.0.0.1` port. Configure the API key, port, and ngrok token, then click **Start LocalControl**.
+
 Open a second terminal in this folder and run:
 
 ```bat
@@ -36,6 +38,18 @@ run.bat test
 ```
 
 You can also open `http://127.0.0.1:8765/health` in a browser. It should show `auth_configured` and `approval_configured` as `true`.
+
+## GUI Control Panel
+
+Startup now shows the settings UI before the main app starts. After startup, the same control panel is also available from the running app:
+
+```text
+http://127.0.0.1:8765/ui
+```
+
+The UI uses the same bearer token as the API. It can refresh runtime config, reveal or randomize the API key, update the saved port, set the ngrok authtoken/domain/public URL, and run PowerShell or `cmd.exe` terminal sessions through the existing terminal API.
+
+Secret values are masked by default. Click **Reveal** after entering the bearer token when you need to show or copy the current API key or ngrok authtoken. Port and tunnel setting changes are saved to `.env`; port and active tunnel changes take effect on restart.
 
 ## Full-Control Mode
 
@@ -179,7 +193,7 @@ Tunnel mode starts LocalControl in the background, waits for `http://127.0.0.1:8
 
 If ngrok is not installed, `run.bat tunnel` downloads the Windows ngrok ZIP and installs `ngrok.exe` locally under `.local-tools\ngrok\`. That folder is ignored by git.
 
-ngrok requires an account authtoken. Tunnel mode uses `LOCALCONTROL_NGROK_AUTHTOKEN` or `NGROK_AUTHTOKEN` when set; otherwise it prompts once and saves the token with `ngrok config add-authtoken`.
+ngrok requires an account authtoken. Tunnel mode uses `LOCALCONTROL_NGROK_AUTHTOKEN` or `NGROK_AUTHTOKEN` when set; otherwise it prompts and saves the token with `ngrok config add-authtoken`.
 
 ```powershell
 $env:LOCALCONTROL_NGROK_AUTHTOKEN = "paste-your-ngrok-token-here"
@@ -204,7 +218,7 @@ $env:LOCALCONTROL_NGROK_URL_TIMEOUT_SECONDS = "300"
 
 If no reserved domain is configured, tunnel mode uses ngrok's local API to read the random public HTTPS URL and exports the GPT schema for that URL. Keep the tunnel window open while your Custom GPT is using the API.
 
-If ngrok stays at `Session Status connecting`, the launcher waits up to `LOCALCONTROL_NGROK_URL_TIMEOUT_SECONDS` and prints the last local API status. Usually that means ngrok is still negotiating, the account/token has a problem, or outbound network/firewall access is blocked. You can raise the timeout or set `LOCALCONTROL_PUBLIC_URL` / `LOCALCONTROL_NGROK_DOMAIN` when you already know the public URL.
+If ngrok rejects the token, exits early, or never publishes a public URL, the launcher prompts for a fresh token and retries up to three times. Corrected tokens are saved back to `.env` as `LOCALCONTROL_NGROK_AUTHTOKEN` and to ngrok's own config. If ngrok stays at `Session Status connecting`, the launcher waits up to `LOCALCONTROL_NGROK_URL_TIMEOUT_SECONDS` and prints the last local API status. Usually that means ngrok is still negotiating, the account/token has a problem, or outbound network/firewall access is blocked. You can raise the timeout or set `LOCALCONTROL_PUBLIC_URL` / `LOCALCONTROL_NGROK_DOMAIN` when you already know the public URL.
 
 ## Full-Control Execution Model
 

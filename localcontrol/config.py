@@ -34,6 +34,13 @@ def load_dotenv(path: Path | None = None) -> None:
         os.environ[key] = _strip_quotes(value)
 
 
+def configured_env_path() -> Path | None:
+    raw_path = os.getenv("LOCALCONTROL_CONFIG_ENV_PATH")
+    if not raw_path:
+        return None
+    return Path(raw_path).expanduser().resolve(strict=False)
+
+
 def sha256_hex(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
@@ -80,7 +87,7 @@ class Settings:
 
 @functools.lru_cache(maxsize=1)
 def get_settings() -> Settings:
-    load_dotenv()
+    load_dotenv(configured_env_path())
     cpu_count = os.cpu_count() or 1
 
     data_dir = Path(os.getenv("LOCALCONTROL_DATA_DIR", "localcontrol-data")).expanduser()

@@ -22,6 +22,7 @@ from localcontrol.config import load_dotenv
 from localcontrol.openapi_export import export_schema
 
 DEFAULT_NGROK_DOWNLOAD_URL = "https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-windows-amd64.zip"
+MAX_NGROK_AUTH_RETRIES = 3
 
 
 def _env_int(name: str, default: int) -> int:
@@ -120,6 +121,13 @@ def _install_ngrok(download_url: str, install_dir: Path) -> Path:
         shutil.rmtree(temp_root, ignore_errors=True)
 
 
+def _clean_ngrok_authtoken(token: str) -> str:
+    cleaned = re.sub(r"^[^A-Za-z0-9_-]+|[^A-Za-z0-9_-]+$", "", token.strip())
+    if cleaned != token.strip():
+        print("Removed invalid edge characters from the ngrok authtoken.")
+    return cleaned
+
+
 def _resolve_ngrok_executable(requested: str, download_url: str, no_auto_install: bool) -> Path:
     install_dir = Path.cwd() / ".local-tools" / "ngrok"
     local_exe = install_dir / "ngrok.exe"
@@ -187,6 +195,7 @@ def _ngrok_authtoken_configured() -> bool:
 
 
 def _set_ngrok_authtoken(ngrok_path: Path, token: str) -> None:
+    token = _clean_ngrok_authtoken(token)
     if not token:
         raise RuntimeError("ngrok authtoken was empty.")
     print("Saving ngrok authtoken...")
@@ -203,19 +212,57 @@ def _set_ngrok_authtoken(ngrok_path: Path, token: str) -> None:
         )
 
 
+def _remember_ngrok_authtoken(token: str) -> None:
+    os.environ["LOCALCONTROL_NGROK_AUTHTOKEN"] = token
+    try:
+        from localcontrol.config_store import update_config
+
+        update_config(ngrok_authtoken=token)
+    except Exception as exc:
+        print(f"Warning: saved token to ngrok config, but could not update .env: {exc}")
+
+
+def _prompt_and_save_ngrok_authtoken(ngrok_path: Path, reason: str | None = None) -> str:
+    if reason:
+        print()
+        print(reason)
+    print("Paste a fresh ngrok authtoken. Press Ctrl+C to stop.")
+    print("Get one from: https://dashboard.ngrok.com/get-started/your-authtoken")
+    while True:
+        token = _clean_ngrok_authtoken(getpass.getpass("Paste ngrok authtoken: "))
+        try:
+            _set_ngrok_authtoken(ngrok_path, token)
+        except RuntimeError as exc:
+            print(str(exc))
+            print("Try again with a valid ngrok authtoken.")
+            continue
+        _remember_ngrok_authtoken(token)
+        return token
+
+
 def _ensure_ngrok_authenticated(ngrok_path: Path, token: str | None, no_prompt: bool) -> None:
     if token:
-        _set_ngrok_authtoken(ngrok_path, token)
-        return
+        try:
+            _set_ngrok_authtoken(ngrok_path, token)
+            return
+        except RuntimeError:
+            if no_prompt:
+                raise
+            _prompt_and_save_ngrok_authtoken(ngrok_path, "ngrok rejected the configured authtoken.")
+            return
     if _ngrok_authtoken_configured():
         return
     if no_prompt:
         raise RuntimeError("ngrok is not authenticated. Set LOCALCONTROL_NGROK_AUTHTOKEN or run ngrok config add-authtoken.")
-    print()
-    print("ngrok needs an authtoken before it can start a tunnel.")
-    print("Get one from: https://dashboard.ngrok.com/get-started/your-authtoken")
-    token = getpass.getpass("Paste ngrok authtoken: ")
-    _set_ngrok_authtoken(ngrok_path, token)
+    _prompt_and_save_ngrok_authtoken(ngrok_path, "ngrok needs an authtoken before it can start a tunnel.")
+
+
+def _wait_ngrok_process_stable(process: subprocess.Popen, seconds: float = 5.0) -> None:
+    deadline = time.monotonic() + seconds
+    while time.monotonic() < deadline:
+        if process.poll() is not None:
+            raise RuntimeError(f"ngrok exited early with code {process.returncode}.")
+        time.sleep(0.25)
 
 
 def _ngrok_public_url(configured_url: str | None, api_port: int, process: subprocess.Popen, timeout_seconds: int) -> str:
@@ -318,9 +365,29 @@ def tunnel_command(args: argparse.Namespace) -> int:
             ngrok_args.append(f"--domain={domain}")
         ngrok_args.append(f"{target_host}:{port}")
 
-        print("Starting ngrok...")
-        ngrok_process = subprocess.Popen(ngrok_args, cwd=Path.cwd())
-        resolved_public_url = _ngrok_public_url(public_url, ngrok_api_port, ngrok_process, timeout_seconds)
+        retry_count = 0
+        while True:
+            print("Starting ngrok...")
+            ngrok_process = subprocess.Popen(ngrok_args, cwd=Path.cwd())
+            try:
+                if public_url:
+                    _wait_ngrok_process_stable(ngrok_process)
+                resolved_public_url = _ngrok_public_url(public_url, ngrok_api_port, ngrok_process, timeout_seconds)
+                break
+            except RuntimeError as exc:
+                if ngrok_process and ngrok_process.poll() is None:
+                    ngrok_process.terminate()
+                    try:
+                        ngrok_process.wait(timeout=3)
+                    except subprocess.TimeoutExpired:
+                        ngrok_process.kill()
+                if args.no_ngrok_auth_prompt or retry_count >= MAX_NGROK_AUTH_RETRIES:
+                    raise
+                retry_count += 1
+                _prompt_and_save_ngrok_authtoken(
+                    ngrok_path,
+                    f"ngrok could not start or connect: {exc}",
+                )
 
         print(f"Regenerating GPT Actions schema for {resolved_public_url}")
         output = export_schema(resolved_public_url, Path.cwd() / "gpt-actions.openapi.yaml")
@@ -344,6 +411,33 @@ def schema_command(args: argparse.Namespace) -> int:
     output = export_schema(args.server_url, args.output)
     print(f"Wrote {output}")
     return 0
+
+
+def launch_command(args: argparse.Namespace) -> int:
+    from localcontrol.launcher_ui import run_prelaunch_ui
+
+    result = run_prelaunch_ui(args.mode, open_browser=not args.no_browser)
+    if result.action != "start":
+        print("LocalControl startup canceled.")
+        return 0
+
+    next_args = argparse.Namespace(
+        host=args.host,
+        port=None,
+        allow_all=args.allow_all,
+        ngrok_domain=args.ngrok_domain,
+        public_url=args.public_url,
+        ngrok_exe=args.ngrok_exe,
+        ngrok_download_url=args.ngrok_download_url,
+        ngrok_authtoken=args.ngrok_authtoken,
+        ngrok_api_port=args.ngrok_api_port,
+        ngrok_url_timeout_seconds=args.ngrok_url_timeout_seconds,
+        no_ngrok_auto_install=args.no_ngrok_auto_install,
+        no_ngrok_auth_prompt=args.no_ngrok_auth_prompt,
+    )
+    if result.mode == "serve":
+        return serve_command(next_args)
+    return tunnel_command(next_args)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -376,13 +470,29 @@ def build_parser() -> argparse.ArgumentParser:
     schema.add_argument("--server-url", default="https://YOUR-RESERVED-NGROK-DOMAIN.ngrok-free.app")
     schema.add_argument("--output", default=str(Path.cwd() / "gpt-actions.openapi.yaml"))
     schema.set_defaults(func=schema_command)
+
+    launch = subparsers.add_parser("launch", help="Open settings UI first, then start LocalControl.")
+    launch.add_argument("--mode", choices=["serve", "tunnel"], default="tunnel")
+    launch.add_argument("--host", default=None)
+    launch.add_argument("--allow-all", action="store_true")
+    launch.add_argument("--ngrok-domain", default=None)
+    launch.add_argument("--public-url", default=None)
+    launch.add_argument("--ngrok-exe", default=None)
+    launch.add_argument("--ngrok-download-url", default=None)
+    launch.add_argument("--ngrok-authtoken", default=None)
+    launch.add_argument("--ngrok-api-port", type=int, default=None)
+    launch.add_argument("--ngrok-url-timeout-seconds", type=int, default=None)
+    launch.add_argument("--no-ngrok-auto-install", action="store_true")
+    launch.add_argument("--no-ngrok-auth-prompt", action="store_true")
+    launch.add_argument("--no-browser", action="store_true")
+    launch.set_defaults(func=launch_command)
     return parser
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args_list = list(argv if argv is not None else sys.argv[1:])
     if not args_list:
-        args_list = ["tunnel"] if getattr(sys, "frozen", False) else ["serve"]
+        args_list = ["launch", "--mode", "tunnel"] if getattr(sys, "frozen", False) else ["launch", "--mode", "serve"]
     parser = build_parser()
     args = parser.parse_args(args_list)
     if not hasattr(args, "func"):

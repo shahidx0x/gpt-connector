@@ -35,6 +35,44 @@ class HealthResponse(StrictModel):
     version: str
 
 
+class ConfigSecretValue(StrictModel):
+    configured: bool
+    source: str | None = None
+    revealable: bool
+    masked: str | None = None
+    value: str | None = None
+
+
+class ConfigSnapshotResponse(StrictModel):
+    env_path: str
+    port: int
+    bind_host: str
+    api_key: ConfigSecretValue
+    ngrok_authtoken: ConfigSecretValue
+    ngrok_domain: str | None = None
+    public_url: str | None = None
+
+
+class ConfigGetRequest(StrictModel):
+    reveal_secrets: bool = False
+
+
+class ConfigUpdateRequest(StrictModel):
+    port: int | None = Field(default=None, ge=1, le=65535)
+    api_key: str | None = Field(default=None, min_length=16)
+    randomize_api_key: bool = False
+    ngrok_authtoken: str | None = Field(default=None, min_length=1)
+    ngrok_domain: str | None = None
+    public_url: str | None = None
+    reveal_secrets: bool = False
+
+
+class ConfigUpdateResponse(ConfigSnapshotResponse):
+    changed_keys: list[str] = Field(default_factory=list)
+    restart_required_keys: list[str] = Field(default_factory=list)
+    generated_api_key: str | None = None
+
+
 class ErrorResponse(StrictModel):
     ok: bool = False
     code: str

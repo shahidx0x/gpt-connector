@@ -48,6 +48,54 @@ function Import-LocalEnv {
     }
 }
 
+function ConvertTo-EnvLiteral {
+    param([string]$Value)
+
+    if ($null -eq $Value) {
+        return ""
+    }
+    if ($Value -match "^[A-Za-z0-9_./:@%+=,\-]*$") {
+        return $Value
+    }
+    return '"' + $Value.Replace("\", "\\").Replace('"', '\"') + '"'
+}
+
+function Set-LocalEnvValue {
+    param(
+        [string]$Key,
+        [string]$Value
+    )
+
+    $envPath = Join-Path $repo ".env"
+    $newLine = "$Key=$(ConvertTo-EnvLiteral -Value $Value)"
+    $escapedKey = [regex]::Escape($Key)
+    $output = New-Object System.Collections.Generic.List[string]
+    $updated = $false
+
+    if (Test-Path -LiteralPath $envPath) {
+        foreach ($line in Get-Content -LiteralPath $envPath) {
+            if ($line -match "^\s*(?:export\s+)?$escapedKey\s*=") {
+                if (-not $updated) {
+                    $output.Add($newLine)
+                    $updated = $true
+                }
+                continue
+            }
+            $output.Add($line)
+        }
+    }
+
+    if (-not $updated) {
+        if ($output.Count -gt 0 -and $output[$output.Count - 1].Trim()) {
+            $output.Add("")
+        }
+        $output.Add($newLine)
+    }
+
+    Set-Content -LiteralPath $envPath -Value $output -Encoding UTF8
+    [Environment]::SetEnvironmentVariable($Key, $Value, "Process")
+}
+
 function Get-LocalTargetHost {
     param([string]$Name)
 
@@ -75,6 +123,22 @@ function Wait-LocalControl {
         }
     }
     throw "Timed out waiting for LocalControl health at $Url."
+}
+
+function Wait-NgrokStarted {
+    param(
+        [System.Diagnostics.Process]$Process,
+        [int]$Seconds = 5
+    )
+
+    $deadline = [DateTime]::UtcNow.AddSeconds($Seconds)
+    while ([DateTime]::UtcNow -lt $deadline) {
+        $Process.Refresh()
+        if ($Process.HasExited) {
+            throw "ngrok exited early with code $($Process.ExitCode)."
+        }
+        Start-Sleep -Milliseconds 250
+    }
 }
 
 function Get-NgrokPublicUrl {
@@ -285,12 +349,27 @@ function Test-NgrokAuthtokenConfigured {
     return $false
 }
 
+function Clean-NgrokAuthtoken {
+    param([string]$Token)
+
+    if (-not $Token) {
+        return ""
+    }
+    $trimmed = $Token.Trim()
+    $cleaned = [regex]::Replace($trimmed, "^[^A-Za-z0-9_-]+|[^A-Za-z0-9_-]+$", "")
+    if ($cleaned -ne $trimmed) {
+        Write-Host "Removed invalid edge characters from the ngrok authtoken."
+    }
+    return $cleaned
+}
+
 function Set-NgrokAuthtoken {
     param(
         [string]$NgrokPath,
         [string]$Token
     )
 
+    $Token = Clean-NgrokAuthtoken -Token $Token
     if (-not $Token) {
         throw "ngrok authtoken was empty."
     }
@@ -299,6 +378,35 @@ function Set-NgrokAuthtoken {
     & $NgrokPath config add-authtoken $Token *> $null
     if ($LASTEXITCODE -ne 0) {
         throw "ngrok rejected the authtoken. Get a valid token from https://dashboard.ngrok.com/get-started/your-authtoken"
+    }
+    Set-LocalEnvValue -Key "LOCALCONTROL_NGROK_AUTHTOKEN" -Value $Token
+    return $Token
+}
+
+function Read-AndSaveNgrokAuthtoken {
+    param(
+        [string]$NgrokPath,
+        [string]$Reason
+    )
+
+    if ($Reason) {
+        Write-Host ""
+        Write-Host $Reason
+    }
+    Write-Host "Paste a fresh ngrok authtoken. Press Ctrl+C to stop."
+    Write-Host "Get one from: https://dashboard.ngrok.com/get-started/your-authtoken"
+
+    while ($true) {
+        $secureToken = Read-Host "Paste ngrok authtoken" -AsSecureString
+        $plainToken = Convert-SecureStringToPlainText -SecureText $secureToken
+        try {
+            return Set-NgrokAuthtoken -NgrokPath $NgrokPath -Token $plainToken
+        } catch {
+            Write-Host $_.Exception.Message
+            Write-Host "Try again with a valid ngrok authtoken."
+        } finally {
+            $plainToken = $null
+        }
     }
 }
 
@@ -310,7 +418,14 @@ function Ensure-NgrokAuthenticated {
     )
 
     if ($Token) {
-        Set-NgrokAuthtoken -NgrokPath $NgrokPath -Token $Token
+        try {
+            Set-NgrokAuthtoken -NgrokPath $NgrokPath -Token $Token | Out-Null
+        } catch {
+            if ($DisablePrompt) {
+                throw
+            }
+            Read-AndSaveNgrokAuthtoken -NgrokPath $NgrokPath -Reason "ngrok rejected the configured authtoken." | Out-Null
+        }
         return
     }
 
@@ -322,16 +437,7 @@ function Ensure-NgrokAuthenticated {
         throw "ngrok is not authenticated. Set LOCALCONTROL_NGROK_AUTHTOKEN or run: ngrok config add-authtoken <TOKEN>"
     }
 
-    Write-Host ""
-    Write-Host "ngrok needs an authtoken before it can start a tunnel."
-    Write-Host "Get one from: https://dashboard.ngrok.com/get-started/your-authtoken"
-    $secureToken = Read-Host "Paste ngrok authtoken" -AsSecureString
-    $plainToken = Convert-SecureStringToPlainText -SecureText $secureToken
-    try {
-        Set-NgrokAuthtoken -NgrokPath $NgrokPath -Token $plainToken
-    } finally {
-        $plainToken = $null
-    }
+    Read-AndSaveNgrokAuthtoken -NgrokPath $NgrokPath -Reason "ngrok needs an authtoken before it can start a tunnel." | Out-Null
 }
 
 function Start-Tunnel {
@@ -374,9 +480,29 @@ function Start-Tunnel {
         }
         $ngrokArgs += "$($targetHost):$BindPort"
 
-        Write-Host "Starting ngrok..."
-        $ngrokProcess = Start-Process -FilePath $ngrokPath -ArgumentList $ngrokArgs -WorkingDirectory $repo -PassThru -NoNewWindow
-        $resolvedPublicUrl = Get-NgrokPublicUrl -ConfiguredUrl $ConfiguredPublicUrl -ApiPort $ApiPort -Process $ngrokProcess -TimeoutSeconds $UrlTimeoutSeconds
+        $retryCount = 0
+        $maxRetries = if ($DisableNgrokAuthPrompt) { 0 } else { 3 }
+        while ($true) {
+            Write-Host "Starting ngrok..."
+            $ngrokProcess = Start-Process -FilePath $ngrokPath -ArgumentList $ngrokArgs -WorkingDirectory $repo -PassThru -NoNewWindow
+            try {
+                if ($ConfiguredPublicUrl) {
+                    Wait-NgrokStarted -Process $ngrokProcess
+                }
+                $resolvedPublicUrl = Get-NgrokPublicUrl -ConfiguredUrl $ConfiguredPublicUrl -ApiPort $ApiPort -Process $ngrokProcess -TimeoutSeconds $UrlTimeoutSeconds
+                break
+            } catch {
+                $failure = $_.Exception.Message
+                if ($ngrokProcess -and -not $ngrokProcess.HasExited) {
+                    Stop-Process -Id $ngrokProcess.Id -Force -ErrorAction SilentlyContinue
+                }
+                if ($retryCount -ge $maxRetries) {
+                    throw
+                }
+                $retryCount++
+                $Authtoken = Read-AndSaveNgrokAuthtoken -NgrokPath $ngrokPath -Reason "ngrok could not start or connect: $failure"
+            }
+        }
 
         Write-Host "Regenerating GPT Actions schema for $resolvedPublicUrl"
         & $Python scripts\export_openapi.py --server-url $resolvedPublicUrl

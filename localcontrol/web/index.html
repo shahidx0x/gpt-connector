@@ -1,0 +1,669 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LocalControl</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #111316;
+      --panel: #1b1f24;
+      --panel-2: #222830;
+      --border: #343c46;
+      --text: #eef2f5;
+      --muted: #a8b3bd;
+      --accent: #35a37f;
+      --accent-2: #4c8bd6;
+      --danger: #e06666;
+      --warn: #d9a441;
+      --mono: Consolas, "Cascadia Mono", "Courier New", monospace;
+      --sans: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      min-height: 34px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--panel-2);
+      color: var(--text);
+      padding: 0 12px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      border-color: var(--accent);
+    }
+
+    button.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #06110d;
+      font-weight: 700;
+    }
+
+    button.danger:hover {
+      border-color: var(--danger);
+      color: #ffd6d6;
+    }
+
+    input,
+    select {
+      width: 100%;
+      min-height: 34px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #0f1215;
+      color: var(--text);
+      padding: 6px 9px;
+      outline: none;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: var(--accent-2);
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0;
+    }
+
+    .shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      background: #171a1f;
+    }
+
+    h1,
+    h2 {
+      margin: 0;
+      letter-spacing: 0;
+    }
+
+    h1 {
+      font-size: 18px;
+    }
+
+    h2 {
+      font-size: 15px;
+    }
+
+    .status-line {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 13px;
+      flex-wrap: wrap;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--warn);
+      display: inline-block;
+    }
+
+    .dot.ok {
+      background: var(--accent);
+    }
+
+    .dot.bad {
+      background: var(--danger);
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: minmax(300px, 420px) 1fr;
+      min-height: 0;
+    }
+
+    .sidebar,
+    .workspace {
+      min-width: 0;
+      min-height: 0;
+      padding: 16px;
+    }
+
+    .sidebar {
+      border-right: 1px solid var(--border);
+      background: #15181d;
+      overflow: auto;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 12px;
+      overflow: hidden;
+    }
+
+    .panel {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+      padding: 14px;
+    }
+
+    .panel + .panel {
+      margin-top: 14px;
+    }
+
+    .grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .two {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .secret-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 8px;
+      align-items: end;
+    }
+
+    .meta {
+      color: var(--muted);
+      font-size: 12px;
+      overflow-wrap: anywhere;
+    }
+
+    .message {
+      min-height: 20px;
+      color: var(--muted);
+      overflow-wrap: anywhere;
+    }
+
+    .message.error {
+      color: #ffb3b3;
+    }
+
+    .message.ok {
+      color: #a9e8d0;
+    }
+
+    .terminal-head {
+      display: grid;
+      grid-template-columns: 150px minmax(160px, 1fr) auto auto;
+      gap: 10px;
+      align-items: end;
+    }
+
+    .terminal {
+      min-height: 260px;
+      height: 100%;
+      overflow: auto;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #07090b;
+      padding: 12px;
+      font-family: var(--mono);
+      font-size: 13px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .terminal .command {
+      color: #8fd7ff;
+    }
+
+    .terminal .stdout {
+      color: #e5edf2;
+    }
+
+    .terminal .stderr {
+      color: #ffb0b0;
+    }
+
+    .terminal .system {
+      color: #d8bd7a;
+    }
+
+    .command-bar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+    }
+
+    @media (max-width: 900px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        border-right: 0;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .terminal-head,
+      .secret-row,
+      .two {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div>
+        <h1>LocalControl</h1>
+        <div class="status-line">
+          <span id="health-dot" class="dot"></span>
+          <span id="health-text">Checking service</span>
+        </div>
+      </div>
+      <div class="actions">
+        <button id="refresh-config" type="button">Refresh</button>
+        <button id="show-secrets" type="button">Reveal</button>
+      </div>
+    </header>
+
+    <main>
+      <aside class="sidebar">
+        <section class="panel grid">
+          <h2>Access</h2>
+          <label>
+            Bearer token
+            <input id="token" type="password" autocomplete="off" spellcheck="false">
+          </label>
+          <div class="actions">
+            <button id="save-token" type="button" class="primary">Save Token</button>
+            <button id="clear-token" type="button">Clear</button>
+          </div>
+          <div id="auth-message" class="message"></div>
+        </section>
+
+        <section class="panel grid">
+          <h2>Runtime</h2>
+          <div class="two grid">
+            <label>
+              Port
+              <input id="port" type="number" min="1" max="65535">
+            </label>
+            <label>
+              Bind host
+              <input id="bind-host" type="text" readonly>
+            </label>
+          </div>
+          <label>
+            Config file
+            <input id="env-path" type="text" readonly>
+          </label>
+          <div class="actions">
+            <button id="save-runtime" type="button" class="primary">Save Runtime</button>
+          </div>
+          <div id="runtime-message" class="message"></div>
+        </section>
+
+        <section class="panel grid">
+          <h2>Keys</h2>
+          <div class="secret-row">
+            <label>
+              API key
+              <input id="api-key-current" type="password" readonly>
+            </label>
+            <button id="random-api-key" type="button">Randomize</button>
+            <button id="copy-api-key" type="button">Copy</button>
+          </div>
+          <label>
+            New API key
+            <input id="api-key-new" type="password" autocomplete="off" spellcheck="false">
+          </label>
+          <div class="actions">
+            <button id="save-api-key" type="button" class="primary">Set API Key</button>
+          </div>
+          <div id="api-key-meta" class="meta"></div>
+        </section>
+
+        <section class="panel grid">
+          <h2>Ngrok</h2>
+          <label>
+            Current authtoken
+            <input id="ngrok-token-current" type="password" readonly>
+          </label>
+          <label>
+            New authtoken
+            <input id="ngrok-token-new" type="password" autocomplete="off" spellcheck="false">
+          </label>
+          <label>
+            Reserved domain
+            <input id="ngrok-domain" type="text" spellcheck="false">
+          </label>
+          <label>
+            Public URL
+            <input id="public-url" type="url" spellcheck="false">
+          </label>
+          <div class="actions">
+            <button id="save-ngrok" type="button" class="primary">Save Ngrok</button>
+            <button id="copy-ngrok" type="button">Copy Token</button>
+          </div>
+          <div id="ngrok-message" class="message"></div>
+        </section>
+      </aside>
+
+      <section class="workspace">
+        <div class="terminal-head">
+          <label>
+            Shell
+            <select id="terminal-shell">
+              <option value="powershell">PowerShell</option>
+              <option value="cmd">cmd.exe</option>
+            </select>
+          </label>
+          <label>
+            Working directory
+            <input id="terminal-cwd" type="text" spellcheck="false">
+          </label>
+          <button id="new-session" type="button" class="primary">New Session</button>
+          <button id="terminate-session" type="button" class="danger">Terminate</button>
+        </div>
+
+        <div id="terminal-output" class="terminal" aria-live="polite"></div>
+
+        <div class="command-bar">
+          <input id="terminal-command" type="text" autocomplete="off" spellcheck="false">
+          <button id="run-command" type="button" class="primary">Run</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const state = {
+      token: localStorage.getItem("localcontrol.token") || "",
+      config: null,
+      sessionId: null,
+      nextEventId: 0,
+      pollTimer: null
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    function setMessage(id, text, kind = "") {
+      const node = $(id);
+      node.textContent = text || "";
+      node.className = `message ${kind}`.trim();
+    }
+
+    function setHealth(ok, text) {
+      $("health-dot").className = `dot ${ok ? "ok" : "bad"}`;
+      $("health-text").textContent = text;
+    }
+
+    function authHeaders() {
+      return {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${state.token}`
+      };
+    }
+
+    async function api(path, body = {}) {
+      if (!state.token) {
+        throw new Error("Bearer token is required.");
+      }
+      const response = await fetch(path, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify(body)
+      });
+      const text = await response.text();
+      const data = text ? JSON.parse(text) : {};
+      if (!response.ok) {
+        throw new Error(data.message || data.detail || `HTTP ${response.status}`);
+      }
+      return data;
+    }
+
+    async function getHealth() {
+      try {
+        const response = await fetch("/health");
+        const data = await response.json();
+        setHealth(Boolean(data.ok), `v${data.version} | CPU ${data.cpu_count} | workers ${data.max_shell_workers}`);
+      } catch (error) {
+        setHealth(false, error.message);
+      }
+    }
+
+    function applyConfig(config) {
+      state.config = config;
+      $("port").value = config.port || "";
+      $("bind-host").value = config.bind_host || "";
+      $("env-path").value = config.env_path || "";
+      $("api-key-current").value = config.api_key.value || config.api_key.masked || "";
+      $("ngrok-token-current").value = config.ngrok_authtoken.value || config.ngrok_authtoken.masked || "";
+      $("ngrok-domain").value = config.ngrok_domain || "";
+      $("public-url").value = config.public_url || "";
+      $("api-key-meta").textContent = `Source: ${config.api_key.source || "not configured"} | Revealable: ${config.api_key.revealable}`;
+      setMessage("ngrok-message", `Source: ${config.ngrok_authtoken.source || "not configured"}`);
+    }
+
+    async function loadConfig(reveal = false) {
+      try {
+        const config = await api("/config/get", { reveal_secrets: reveal });
+        applyConfig(config);
+        setMessage("auth-message", "Connected.", "ok");
+      } catch (error) {
+        setMessage("auth-message", error.message, "error");
+      }
+    }
+
+    async function updateConfig(payload, messageId) {
+      try {
+        const result = await api("/config/update", payload);
+        applyConfig(result);
+        if (result.generated_api_key) {
+          state.token = result.generated_api_key;
+          $("token").value = state.token;
+          localStorage.setItem("localcontrol.token", state.token);
+          $("api-key-current").value = result.generated_api_key;
+        }
+        const restart = result.restart_required_keys.length ? ` Restart: ${result.restart_required_keys.join(", ")}` : "";
+        setMessage(messageId, `Saved.${restart}`, "ok");
+      } catch (error) {
+        setMessage(messageId, error.message, "error");
+      }
+    }
+
+    async function copyValue(inputId, messageId) {
+      const value = $(inputId).value;
+      if (!value || value.includes("...")) {
+        setMessage(messageId, "Reveal the value first.", "error");
+        return;
+      }
+      await navigator.clipboard.writeText(value);
+      setMessage(messageId, "Copied.", "ok");
+    }
+
+    function appendEvent(event) {
+      const terminal = $("terminal-output");
+      const line = document.createElement("div");
+      line.className = event.stream;
+      line.textContent = `[${event.stream}] ${event.text}`;
+      terminal.appendChild(line);
+      terminal.scrollTop = terminal.scrollHeight;
+    }
+
+    async function pollTerminal() {
+      if (!state.sessionId) {
+        return;
+      }
+      try {
+        const data = await api(`/terminal/sessions/${state.sessionId}/events`, {
+          after_event_id: state.nextEventId,
+          max_events: 200
+        });
+        for (const event of data.events) {
+          appendEvent(event);
+        }
+        state.nextEventId = data.next_event_id - 1;
+      } catch (error) {
+        appendEvent({ stream: "system", text: error.message });
+      }
+    }
+
+    function startPolling() {
+      if (state.pollTimer) {
+        clearInterval(state.pollTimer);
+      }
+      state.pollTimer = setInterval(pollTerminal, 1000);
+      pollTerminal();
+    }
+
+    async function newSession() {
+      try {
+        const payload = {
+          shell: $("terminal-shell").value,
+          cwd: $("terminal-cwd").value || null,
+          name: "gui"
+        };
+        const data = await api("/terminal/sessions", payload);
+        state.sessionId = data.session_id;
+        state.nextEventId = 0;
+        $("terminal-output").textContent = "";
+        appendEvent({ stream: "system", text: `session ${data.session_id} pid=${data.process_id || ""}` });
+        startPolling();
+      } catch (error) {
+        appendEvent({ stream: "system", text: error.message });
+      }
+    }
+
+    async function runCommand() {
+      const command = $("terminal-command").value;
+      if (!command.trim()) {
+        return;
+      }
+      if (!state.sessionId) {
+        await newSession();
+      }
+      if (!state.sessionId) {
+        return;
+      }
+      try {
+        await api(`/terminal/sessions/${state.sessionId}/exec`, { command });
+        $("terminal-command").value = "";
+      } catch (error) {
+        appendEvent({ stream: "system", text: error.message });
+      }
+    }
+
+    async function terminateSession() {
+      if (!state.sessionId) {
+        return;
+      }
+      try {
+        await api(`/terminal/sessions/${state.sessionId}/terminate`, {});
+        appendEvent({ stream: "system", text: "terminated" });
+        state.sessionId = null;
+      } catch (error) {
+        appendEvent({ stream: "system", text: error.message });
+      }
+    }
+
+    $("token").value = state.token;
+    $("save-token").addEventListener("click", () => {
+      state.token = $("token").value.trim();
+      localStorage.setItem("localcontrol.token", state.token);
+      loadConfig(false);
+    });
+    $("clear-token").addEventListener("click", () => {
+      state.token = "";
+      $("token").value = "";
+      localStorage.removeItem("localcontrol.token");
+      setMessage("auth-message", "Token cleared.");
+    });
+    $("refresh-config").addEventListener("click", () => loadConfig(false));
+    $("show-secrets").addEventListener("click", () => loadConfig(true));
+    $("save-runtime").addEventListener("click", () => updateConfig({ port: Number($("port").value) }, "runtime-message"));
+    $("random-api-key").addEventListener("click", () => updateConfig({ randomize_api_key: true, reveal_secrets: true }, "auth-message"));
+    $("save-api-key").addEventListener("click", () => {
+      const apiKey = $("api-key-new").value.trim();
+      if (!apiKey) {
+        setMessage("auth-message", "Enter a new API key.", "error");
+        return;
+      }
+      updateConfig({ api_key: apiKey, reveal_secrets: true }, "auth-message").then(() => {
+        state.token = apiKey;
+        $("token").value = apiKey;
+        localStorage.setItem("localcontrol.token", apiKey);
+        $("api-key-new").value = "";
+      });
+    });
+    $("save-ngrok").addEventListener("click", () => {
+      const payload = {
+        ngrok_domain: $("ngrok-domain").value.trim() || null,
+        public_url: $("public-url").value.trim() || null
+      };
+      const ngrokToken = $("ngrok-token-new").value.trim();
+      if (ngrokToken) {
+        payload.ngrok_authtoken = ngrokToken;
+      }
+      updateConfig(payload, "ngrok-message").then(() => {
+        $("ngrok-token-new").value = "";
+      });
+    });
+    $("copy-api-key").addEventListener("click", () => copyValue("api-key-current", "auth-message"));
+    $("copy-ngrok").addEventListener("click", () => copyValue("ngrok-token-current", "ngrok-message"));
+    $("new-session").addEventListener("click", newSession);
+    $("run-command").addEventListener("click", runCommand);
+    $("terminate-session").addEventListener("click", terminateSession);
+    $("terminal-command").addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        runCommand();
+      }
+    });
+
+    getHealth();
+    if (state.token) {
+      loadConfig(false);
+    }
+  </script>
+</body>
+</html>

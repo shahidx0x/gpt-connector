@@ -18,6 +18,7 @@ def approval_headers(auth_headers: dict[str, str]) -> dict[str, str]:
 def client(monkeypatch: pytest.MonkeyPatch, tmp_path):
     monkeypatch.setenv("LOCALCONTROL_API_KEY", "test-token")
     monkeypatch.setenv("LOCALCONTROL_APPROVAL_KEY", "approval-token")
+    monkeypatch.setenv("LOCALCONTROL_CONFIG_ENV_PATH", str(tmp_path / ".env"))
     monkeypatch.setenv("LOCALCONTROL_DATA_DIR", str(tmp_path / "data"))
     monkeypatch.setenv("LOCALCONTROL_RATE_LIMIT_PER_MINUTE", "0")
 

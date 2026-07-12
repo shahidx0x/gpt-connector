@@ -38,6 +38,41 @@ GPT_ACTION_OPERATIONS: dict[str, set[str]] = {
 }
 
 
+def _collect_schema_refs(value, refs: set[str]) -> None:
+    if isinstance(value, dict):
+        ref = value.get("$ref")
+        if isinstance(ref, str) and ref.startswith("#/components/schemas/"):
+            refs.add(ref.rsplit("/", 1)[-1])
+        for child in value.values():
+            _collect_schema_refs(child, refs)
+    elif isinstance(value, list):
+        for item in value:
+            _collect_schema_refs(item, refs)
+
+
+def _prune_unused_components(schema: dict) -> None:
+    schemas = schema.get("components", {}).get("schemas")
+    if not isinstance(schemas, dict):
+        return
+
+    used: set[str] = set()
+    _collect_schema_refs(schema.get("paths", {}), used)
+    pending = list(used)
+    while pending:
+        name = pending.pop()
+        component = schemas.get(name)
+        if not component:
+            continue
+        discovered: set[str] = set()
+        _collect_schema_refs(component, discovered)
+        for ref_name in discovered:
+            if ref_name not in used:
+                used.add(ref_name)
+                pending.append(ref_name)
+
+    schema["components"]["schemas"] = {name: value for name, value in schemas.items() if name in used}
+
+
 def build_schema(server_url: str) -> dict:
     schema = deepcopy(app.openapi())
     schema["servers"] = [{"url": server_url}]
@@ -60,6 +95,7 @@ def build_schema(server_url: str) -> dict:
     operation_count = sum(len(methods) for methods in filtered_paths.values())
     if operation_count > MAX_GPT_ACTION_OPERATIONS:
         raise RuntimeError(f"Curated GPT schema has {operation_count} operations; max is {MAX_GPT_ACTION_OPERATIONS}.")
+    _prune_unused_components(schema)
     return schema
 
 
@@ -74,4 +110,3 @@ def export_schema(server_url: str, output: str | Path) -> Path:
     else:
         output_path.write_text(json.dumps(schema, indent=2), encoding="utf-8")
     return output_path
-

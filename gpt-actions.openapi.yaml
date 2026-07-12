@@ -4,7 +4,7 @@ info:
   description: Private Custom GPT action schema for a single-user Windows LocalControl
     bridge. Full-control execution mode is enabled; use /execution/logs to retrieve
     command and terminal output.
-  version: 0.1.0
+  version: 0.1.1
 paths:
   /fs/list:
     post:
@@ -1188,99 +1188,6 @@ paths:
       - HTTPBearer: []
 components:
   schemas:
-    ApprovalDecisionRequest:
-      properties:
-        note:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Note
-      additionalProperties: false
-      type: object
-      title: ApprovalDecisionRequest
-    ApprovalRecordModel:
-      properties:
-        id:
-          type: string
-          title: Id
-        action:
-          type: string
-          title: Action
-        reason:
-          type: string
-          title: Reason
-        risk:
-          $ref: '#/components/schemas/RiskLevel'
-        status:
-          $ref: '#/components/schemas/ApprovalStatus'
-        created_at:
-          type: string
-          title: Created At
-        approved_at:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Approved At
-        denied_at:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Denied At
-        consumed_at:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Consumed At
-        note:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Note
-        payload_summary:
-          additionalProperties: true
-          type: object
-          title: Payload Summary
-      additionalProperties: false
-      type: object
-      required:
-      - id
-      - action
-      - reason
-      - risk
-      - status
-      - created_at
-      title: ApprovalRecordModel
-    ApprovalRequest:
-      properties:
-        action:
-          type: string
-          minLength: 1
-          title: Action
-        reason:
-          type: string
-          minLength: 1
-          title: Reason
-        risk:
-          $ref: '#/components/schemas/RiskLevel'
-          default: high
-        payload:
-          additionalProperties: true
-          type: object
-          title: Payload
-      additionalProperties: false
-      type: object
-      required:
-      - action
-      - reason
-      title: ApprovalRequest
-    ApprovalStatus:
-      type: string
-      enum:
-      - pending
-      - approved
-      - denied
-      - consumed
-      title: ApprovalStatus
     ArtifactCreateTextRequest:
       properties:
         name:
@@ -1303,29 +1210,6 @@ components:
       - name
       - content
       title: ArtifactCreateTextRequest
-    ArtifactDeleteRequest:
-      properties: {}
-      additionalProperties: false
-      type: object
-      title: ArtifactDeleteRequest
-    ArtifactDeleteResponse:
-      properties:
-        artifact_id:
-          type: string
-          title: Artifact Id
-        deleted:
-          type: boolean
-          title: Deleted
-        removed_file:
-          type: boolean
-          title: Removed File
-      additionalProperties: false
-      type: object
-      required:
-      - artifact_id
-      - deleted
-      - removed_file
-      title: ArtifactDeleteResponse
     ArtifactFetchUrlRequest:
       properties:
         url:
@@ -1425,25 +1309,6 @@ components:
       required:
       - artifacts
       title: ArtifactListResponse
-    ArtifactUploadBase64Request:
-      properties:
-        name:
-          type: string
-          title: Name
-        content_base64:
-          type: string
-          title: Content Base64
-        mime_type:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Mime Type
-      additionalProperties: false
-      type: object
-      required:
-      - name
-      - content_base64
-      title: ArtifactUploadBase64Request
     ArtifactWriteToPathRequest:
       properties:
         path:
@@ -1911,126 +1776,6 @@ components:
           title: Detail
       type: object
       title: HTTPValidationError
-    HealthResponse:
-      properties:
-        ok:
-          type: boolean
-          title: Ok
-        auth_configured:
-          type: boolean
-          title: Auth Configured
-        approval_configured:
-          type: boolean
-          title: Approval Configured
-        allow_all:
-          type: boolean
-          title: Allow All
-        full_control:
-          type: boolean
-          title: Full Control
-          default: true
-        cpu_count:
-          type: integer
-          title: Cpu Count
-        max_shell_workers:
-          type: integer
-          title: Max Shell Workers
-        version:
-          type: string
-          title: Version
-      additionalProperties: false
-      type: object
-      required:
-      - ok
-      - auth_configured
-      - approval_configured
-      - allow_all
-      - cpu_count
-      - max_shell_workers
-      - version
-      title: HealthResponse
-    JobCancelResponse:
-      properties:
-        job_id:
-          type: string
-          title: Job Id
-        status:
-          type: string
-          title: Status
-        message:
-          type: string
-          title: Message
-      additionalProperties: false
-      type: object
-      required:
-      - job_id
-      - status
-      - message
-      title: JobCancelResponse
-    JobResponse:
-      properties:
-        job_id:
-          type: string
-          title: Job Id
-        status:
-          type: string
-          title: Status
-        command:
-          type: string
-          title: Command
-        shell:
-          type: string
-          title: Shell
-        project_id:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Project Id
-        cwd:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Cwd
-        created_at:
-          type: string
-          title: Created At
-        started_at:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Started At
-        finished_at:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Finished At
-        process_id:
-          anyOf:
-          - type: integer
-          - type: 'null'
-          title: Process Id
-        result:
-          anyOf:
-          - $ref: '#/components/schemas/ShellRunResponse'
-          - type: 'null'
-        error:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Error
-      additionalProperties: false
-      type: object
-      required:
-      - job_id
-      - status
-      - command
-      - shell
-      - cwd
-      - created_at
-      - started_at
-      - finished_at
-      - process_id
-      title: JobResponse
     JobStartedResponse:
       properties:
         job_id:
@@ -2045,103 +1790,6 @@ components:
       - job_id
       - status
       title: JobStartedResponse
-    ProcessInfo:
-      properties:
-        pid:
-          type: integer
-          title: Pid
-        name:
-          type: string
-          title: Name
-        session_name:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Session Name
-        memory:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Memory
-      additionalProperties: false
-      type: object
-      required:
-      - pid
-      - name
-      title: ProcessInfo
-    ProcessKillRequest:
-      properties:
-        pid:
-          type: integer
-          exclusiveMinimum: 0.0
-          title: Pid
-        force:
-          type: boolean
-          title: Force
-          default: true
-        tree:
-          type: boolean
-          title: Tree
-          default: true
-      additionalProperties: false
-      type: object
-      required:
-      - pid
-      title: ProcessKillRequest
-    ProcessKillResponse:
-      properties:
-        pid:
-          type: integer
-          title: Pid
-        killed:
-          type: boolean
-          title: Killed
-        stdout:
-          type: string
-          title: Stdout
-        stderr:
-          type: string
-          title: Stderr
-      additionalProperties: false
-      type: object
-      required:
-      - pid
-      - killed
-      - stdout
-      - stderr
-      title: ProcessKillResponse
-    ProcessListRequest:
-      properties:
-        query:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Query
-        max_results:
-          type: integer
-          maximum: 5000.0
-          minimum: 1.0
-          title: Max Results
-          default: 200
-      additionalProperties: false
-      type: object
-      title: ProcessListRequest
-    ProcessListResponse:
-      properties:
-        processes:
-          items:
-            $ref: '#/components/schemas/ProcessInfo'
-          type: array
-          title: Processes
-        truncated:
-          type: boolean
-          title: Truncated
-      additionalProperties: false
-      type: object
-      required:
-      - processes
-      - truncated
-      title: ProcessListResponse
     ProjectInfo:
       properties:
         project_id:
@@ -2215,14 +1863,6 @@ components:
       required:
       - path
       title: ProjectRegisterRequest
-    RiskLevel:
-      type: string
-      enum:
-      - low
-      - medium
-      - high
-      - critical
-      title: RiskLevel
     SearchContentRequest:
       properties:
         root:

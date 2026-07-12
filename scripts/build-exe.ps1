@@ -99,6 +99,7 @@ function Resolve-NgrokForBundle {
 }
 
 $mode = if ($OneFile) { "--onefile" } else { "--onedir" }
+$webAssets = Join-Path $repo "localcontrol\web"
 $args = @(
     "--noconfirm",
     "--clean",
@@ -115,6 +116,7 @@ $args = @(
     "--collect-submodules", "starlette",
     "--collect-data", "fastapi",
     "--collect-data", "pydantic",
+    "--add-data", "$webAssets;localcontrol\web",
     "--copy-metadata", "fastapi",
     "--copy-metadata", "pydantic",
     "--copy-metadata", "starlette",

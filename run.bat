@@ -3,7 +3,8 @@ setlocal EnableExtensions
 cd /d "%~dp0"
 
 set "PY=.venv\Scripts\python.exe"
-set "MODE=serve"
+set "MODE=launch"
+set "APP_MODE=tunnel"
 set "PORT=8765"
 set "ALLOW_ALL="
 
@@ -13,9 +14,12 @@ if /I "%~1"=="test" set "MODE=test"
 if /I "%~1"=="schema" set "MODE=schema"
 if /I "%~1"=="check" set "MODE=check"
 if /I "%~1"=="build-exe" set "MODE=buildexe"
-if /I "%~1"=="serve" set "MODE=serve"
-if /I "%~1"=="tunnel" set "MODE=tunnel"
-if /I "%~1"=="ngrok" set "MODE=tunnel"
+if /I "%~1"=="launch" set "MODE=launch"
+if /I "%~1"=="serve" set "MODE=launch" & set "APP_MODE=serve"
+if /I "%~1"=="tunnel" set "MODE=launch" & set "APP_MODE=tunnel"
+if /I "%~1"=="ngrok" set "MODE=launch" & set "APP_MODE=tunnel"
+if /I "%~1"=="serve-direct" set "MODE=serve"
+if /I "%~1"=="tunnel-direct" set "MODE=tunnel"
 if /I "%~1"=="--allow-all" set "ALLOW_ALL=1"
 if /I "%~2"=="--allow-all" set "ALLOW_ALL=1"
 if /I "%~3"=="--allow-all" set "ALLOW_ALL=1"
@@ -32,6 +36,7 @@ if /I "%MODE%"=="test" goto :test
 if /I "%MODE%"=="schema" goto :schema
 if /I "%MODE%"=="check" goto :check
 if /I "%MODE%"=="buildexe" goto :buildexe
+if /I "%MODE%"=="launch" goto :launch
 if /I "%MODE%"=="serve" goto :serve
 if /I "%MODE%"=="tunnel" goto :tunnel
 
@@ -40,8 +45,7 @@ goto :help
 
 :ensure
 if not exist ".env" (
-    echo Missing .env. Create it before running LocalControl.
-    exit /b 1
+    echo No .env found yet. The settings UI can create it.
 )
 
 if not exist "%PY%" (
@@ -55,6 +59,15 @@ if errorlevel 1 (
     "%PY%" -m pip install -e ".[dev]" || exit /b 1
 )
 exit /b 0
+
+:launch
+call :ensure || exit /b 1
+call :stopport
+echo Opening LocalControl settings before startup...
+set "CLI_ARGS=launch --mode %APP_MODE%"
+if defined ALLOW_ALL set "CLI_ARGS=%CLI_ARGS% --allow-all"
+"%PY%" -m localcontrol.cli %CLI_ARGS%
+exit /b %errorlevel%
 
 :serve
 call :ensure || exit /b 1
@@ -126,13 +139,14 @@ exit /b %errorlevel%
 
 :help
 echo Usage:
-echo   run.bat          Start the LocalControl API server
-echo   run.bat tunnel   Start the API server and ngrok tunnel
+echo   run.bat          Open settings UI, then start API + ngrok tunnel
+echo   run.bat tunnel   Open settings UI with tunnel mode selected
+echo   run.bat serve    Open settings UI with API-only mode selected
 echo   run.bat ngrok    Alias for tunnel
 echo                   Downloads ngrok to .local-tools\ngrok if missing
 echo   run.bat --allow-all
-echo   run.bat serve --allow-all
-echo   run.bat tunnel --allow-all
+echo   run.bat serve-direct   Start API server without settings UI
+echo   run.bat tunnel-direct  Start API + ngrok without settings UI
 echo   run.bat stop     Stop any process listening on the configured port
 echo   run.bat check    Test health and authenticated system/info endpoint
 echo   run.bat test     Run automated tests
