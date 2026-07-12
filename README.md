@@ -1,43 +1,31 @@
 # GPT-Connect
 
-GPT-Connect gives ChatGPT or a Custom GPT real, authenticated control over your own devices.
+GPT-Connect is a local bridge that lets ChatGPT or a Custom GPT control your own devices with authentication.
 
-It is built for the main limitation of Codex and web ChatGPT: they can reason well, but they cannot directly see your local projects, run your local tools, inspect your terminal output, or keep live context from each machine unless something local exposes that control safely. GPT-Connect is that local bridge.
+It solves the main Codex/web ChatGPT limit: the model can reason about work, but it cannot directly see your local projects, terminals, files, running processes, or command output. GPT-Connect runs on the device and gives the GPT that missing local context.
 
-It runs on your device, uses your local OS permissions, and exposes a small private action surface that a Custom GPT can call through an HTTPS tunnel such as ngrok. There is no central hosted GPT-Connect server.
+It is like an OpenClaw-style local control layer, but without a hosted command server. Each device runs its own bridge.
 
-## What It Solves
+## Install
 
-- Lets ChatGPT work with your real files, commands, projects, logs, and terminals.
-- Gives Codex-style local context to web ChatGPT through Custom GPT Actions.
-- Keeps each device independent: every computer or phone runs its own local bridge.
-- Lets one GPT collect context from multiple devices by calling each device's GPT-Connect URL.
-- Runs command work in tracked jobs so command output can be retrieved later.
-- Handles multiple projects without mixing paths or repeating long folder names.
-- Works cross-platform: Windows, Ubuntu/Linux, and Android through Termux.
-
-On Android/Termux, GPT-Connect can control the Termux environment and files/processes allowed by Android permissions. Full-device control depends on Android permissions, storage access, root, or extra tools installed by the user.
-
-## How It Is Different
-
-GPT-Connect is similar in spirit to local-control tools like OpenClaw: the AI can act on your real machine. The difference is that GPT-Connect is designed as a simple local bridge for Custom GPT usage. You run it on your own device, expose it only when needed, and authenticate every call.
-
-It is not a cloud command server. The server process is local to your device.
-
-## Quick Start
+Download packages from the [latest GitHub release](https://github.com/shahidx0x/gpt-connector/releases/latest).
 
 Windows:
 
+[Download Windows executable](https://github.com/shahidx0x/gpt-connector/releases/latest/download/GPT-Connect-windows-x64-standalone.exe)
+
 ```bat
-run.bat
+GPT-Connect-windows-x64-standalone.exe
 ```
 
 Ubuntu/Linux:
 
+[Download Linux package](https://github.com/shahidx0x/gpt-connector/releases/latest/download/GPT-Connect-linux-x64-standalone.tar.gz)
+
 ```bash
-sudo apt-get update
-sudo apt-get install -y python3 python3-venv
-./run.sh
+tar -xzf GPT-Connect-linux-x64-standalone.tar.gz
+chmod +x GPT-Connect-linux-x64-standalone
+./GPT-Connect-linux-x64-standalone
 ```
 
 Android/Termux:
@@ -45,192 +33,151 @@ Android/Termux:
 ```bash
 pkg update
 pkg install python git
+git clone https://github.com/shahidx0x/gpt-connector.git
+cd gpt-connector
 ./run.sh
 ```
 
-The launcher opens a settings screen first. Set or randomize the API key, configure the port, add your ngrok token if you want web access, then start GPT-Connect.
+Termux control is limited to what Android permissions, storage access, Termux tools, root, or user-granted access allow.
 
-## Using It From ChatGPT
+## What It Does
+
+- Gives ChatGPT local device context: files, projects, commands, terminals, logs.
+- Works from web ChatGPT through Custom GPT Actions.
+- Runs on Windows, Ubuntu/Linux, and Android through Termux.
+- Lets one GPT talk to multiple devices and combine their context in chat.
+- Runs commands as tracked jobs with retrievable output.
+- Handles many projects from one bridge.
+- Uses local OS permissions; no hosted GPT-Connect server is required.
+
+## How ChatGPT Uses It
 
 1. Start GPT-Connect on the device.
-2. Start tunnel mode so the device gets an HTTPS URL.
+2. Start tunnel mode to get an HTTPS URL.
 3. Import `gpt-actions.openapi.yaml` into a private Custom GPT Action.
-4. Use the generated API key as the Custom GPT bearer token.
-5. Ask the GPT to inspect projects, run commands, read logs, or gather device context.
+4. Use the generated API key as the bearer token.
+5. Ask the GPT to inspect projects, run commands, read logs, or gather context.
 
-Every device can have its own URL and key. A single Custom GPT can switch between devices by using the right configured action or schema.
+Each device can have its own GPT-Connect URL and API key.
 
-## Device Context Sync
-
-GPT-Connect does not need a central sync server. Each device keeps its own local state, projects, terminals, and logs. The Custom GPT becomes the sync layer by asking each device for current context and combining the answers in the chat.
-
-Example setup:
-
-- Desktop GPT-Connect for full project folders and build tools.
-- Laptop GPT-Connect for another repo or work environment.
-- Android/Termux GPT-Connect for phone-side scripts, files, and Termux tools.
-- One Custom GPT that can ask each device what it knows, then decide where to run the next command.
-
-## Architecture
+## Architecture Flow
 
 ```mermaid
 flowchart LR
-    User["User in ChatGPT / Custom GPT"]
+    GPT["ChatGPT / Custom GPT"]
     Action["Custom GPT Action"]
-    Tunnel["HTTPS tunnel (ngrok or reverse proxy)"]
-    Bridge["GPT-Connect local bridge"]
-    Auth["Bearer auth + config"]
-    Router["FastAPI route layer"]
+    Tunnel["HTTPS tunnel (ngrok / proxy)"]
+    Bridge["GPT-Connect on device"]
+    Auth["API key auth"]
+    Router["FastAPI router"]
     Projects["Project registry"]
-    Workers["Command worker pool"]
-    Terminals["Persistent terminal sessions"]
-    Logs["Execution log"]
-    Device["Local device OS"]
+    Pool["Multi-thread worker pool"]
+    Terminal["Persistent terminals"]
+    Logs["Execution logs"]
+    OS["Local OS: Windows / Linux / Termux"]
 
-    User --> Action
-    Action --> Tunnel
-    Tunnel --> Bridge
-    Bridge --> Auth
-    Auth --> Router
+    GPT --> Action --> Tunnel --> Bridge --> Auth --> Router
     Router --> Projects
-    Router --> Workers
-    Router --> Terminals
-    Workers --> Device
-    Terminals --> Device
-    Workers --> Logs
-    Terminals --> Logs
-    Logs --> Router
-    Router --> Action
-    Action --> User
+    Router --> Pool
+    Router --> Terminal
+    Pool --> OS
+    Terminal --> OS
+    Pool --> Logs
+    Terminal --> Logs
+    Logs --> Router --> Action --> GPT
 ```
 
-## Request Flow
+## Command Flow
 
 ```mermaid
 sequenceDiagram
     participant GPT as Custom GPT
-    participant Tunnel as HTTPS Tunnel
     participant App as GPT-Connect
     participant Pool as Worker Pool
-    participant OS as Device OS
+    participant OS as Local OS
     participant Log as Execution Log
 
-    GPT->>Tunnel: Authenticated action call
-    Tunnel->>App: Forward to local bridge
-    App->>App: Validate token and request
-    App->>Pool: Start command/job/session
-    Pool->>OS: Run cmd, PowerShell, bash, sh, or local tool
-    OS-->>Pool: stdout/stderr/exit code
-    Pool->>Log: Store tracked output
+    GPT->>App: Authenticated request
+    App->>Pool: Create tracked job
+    Pool->>OS: Run PowerShell, cmd, bash, sh, git, build tool, etc.
+    OS-->>Pool: stdout, stderr, exit code
+    Pool->>Log: Store output by job id
     App-->>GPT: Return result or job id
-    GPT->>App: Poll logs when more context is needed
-    App-->>GPT: Return command/session history
+    GPT->>App: Ask for logs/context
+    App-->>GPT: Return tracked output
 ```
 
-## Multi-Threaded Execution
+## Multi-Threaded Work
 
-GPT-Connect is optimized for many commands and tools running at the same time.
+GPT-Connect runs commands through a bounded worker pool.
 
-- Each shell command becomes a tracked job.
-- Jobs run through a bounded thread pool.
-- Default worker count is `max(4, CPU cores * 4)`.
-- Long-running work can run asynchronously while the GPT keeps working.
-- Output is stored in memory by job/session id so the GPT can retrieve it later.
-- Terminal sessions are persistent, so multi-step work can keep state.
+- Default workers: `max(4, CPU cores * 4)`.
+- Each command runs as a separate tracked job.
+- Long jobs can run async.
+- Output is stored by job/session id.
+- Persistent terminals keep multi-step context alive.
 
-Override worker count:
-
-Windows:
-
-```powershell
-$env:LOCALCONTROL_MAX_SHELL_WORKERS = "32"
-```
-
-Linux/Termux:
+Set worker count:
 
 ```bash
-export LOCALCONTROL_MAX_SHELL_WORKERS=32
+LOCALCONTROL_MAX_SHELL_WORKERS=32
 ```
 
 ## Multi-Project Handling
 
-GPT-Connect can manage many project folders from one running bridge.
-
-Register a project once, then the GPT can refer to it by `project_id` instead of repeating paths. This makes it easier to work across multiple repos, apps, folders, or client projects.
+Register project folders once, then the GPT can work by `project_id`.
 
 ```mermaid
 flowchart TD
     GPT["Custom GPT"]
     Registry["Project registry"]
-    P1["project_id: api"]
-    P2["project_id: frontend"]
-    P3["project_id: mobile"]
-    Jobs["Jobs and terminals"]
+    A["project_id: backend"]
+    B["project_id: frontend"]
+    C["project_id: mobile"]
+    Jobs["Commands, terminals, search, logs"]
 
     GPT --> Registry
-    Registry --> P1
-    Registry --> P2
-    Registry --> P3
-    P1 --> Jobs
-    P2 --> Jobs
-    P3 --> Jobs
+    Registry --> A --> Jobs
+    Registry --> B --> Jobs
+    Registry --> C --> Jobs
 ```
 
-This lets the GPT do work like:
+This lets the GPT:
 
-- Search project A while tests run in project B.
-- Run git, build, or test commands inside the correct folder.
+- Search one project while tests run in another.
+- Run git/build/test commands in the correct folder.
 - Keep separate terminal sessions per project.
-- Retrieve logs and command output by job id.
+- Retrieve output later by job id.
 
-## Platform Support
+## Device Context Sync
 
-| Platform | How to run | Shell support |
-| --- | --- | --- |
-| Windows | `run.bat` or Windows executable | PowerShell, `cmd.exe`, `auto` |
-| Ubuntu/Linux | `./run.sh` or Linux executable | `bash`, `sh`, PowerShell if installed, `auto` |
-| Android/Termux | `./run.sh` from Termux | `bash`, `sh`, Termux tools |
+GPT-Connect does not use a central sync server.
 
-Release builds include:
+Each device keeps its own local state. The Custom GPT syncs context by asking each device what it sees, then combining that information in the chat.
 
-- `GPT-Connect-windows-x64-standalone.exe`
-- `GPT-Connect-windows-x64-standalone.zip`
-- `GPT-Connect-linux-x64-standalone`
-- `GPT-Connect-linux-x64-standalone.tar.gz`
+Example:
 
-## Local UI
+- Desktop bridge: main repos and build tools.
+- Laptop bridge: separate work environment.
+- Android/Termux bridge: phone-side scripts and files.
+- One Custom GPT: gathers context from all of them and chooses where to act.
 
-After startup, the control panel is available on the device:
+## Local Control UI
+
+After startup:
 
 ```text
 http://127.0.0.1:8765/ui
 ```
 
-Use it to change the API key, port, ngrok token, tunnel settings, and open terminal sessions.
+Use it to change the API key, port, ngrok token, tunnel settings, and terminal sessions.
 
-## Safety Model
+## Security Model
 
-GPT-Connect is designed for a trusted personal environment.
-
-- It requires bearer authentication.
-- It binds locally by default.
+- Runs locally on your device.
+- Binds to localhost by default.
+- Requires bearer authentication.
 - Public access should go through HTTPS tunnel or reverse proxy.
-- The API key should be treated like a password.
-- Commands run with the permissions of the user account that started GPT-Connect.
-- Android/Termux access is limited by Android permissions unless you add more privileges yourself.
+- Commands run with the same permissions as the account that started GPT-Connect.
+- Treat the API key like a password.
 
-## Development
-
-Windows:
-
-```powershell
-.\.venv\Scripts\python.exe -m pytest
-.\.venv\Scripts\python.exe scripts\export_openapi.py
-```
-
-Linux/Termux:
-
-```bash
-./.venv/bin/python -m pytest
-./.venv/bin/python scripts/export_openapi.py
-```
