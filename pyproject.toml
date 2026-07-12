@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gpt-connect"
-version = "0.1.2"
+version = "0.1.3"
 description = "Private FastAPI bridge for controlling a local machine from a Custom GPT action."
 requires-python = ">=3.11"
 dependencies = [
