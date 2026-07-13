@@ -4,7 +4,6 @@ import argparse
 import getpass
 import json
 import os
-import re
 import shutil
 import stat
 import subprocess
@@ -21,6 +20,7 @@ import uvicorn
 
 from localcontrol import __version__
 from localcontrol.config import load_dotenv
+from localcontrol.ngrok_values import clean_ngrok_authtoken, normalize_ngrok_domain, normalize_public_url
 from localcontrol.openapi_export import export_schema
 from localcontrol.platform_support import default_ngrok_download_url, ngrok_binary_name
 
@@ -140,7 +140,7 @@ def _install_ngrok(download_url: str, install_dir: Path) -> Path:
 
 
 def _clean_ngrok_authtoken(token: str) -> str:
-    cleaned = re.sub(r"^[^A-Za-z0-9_-]+|[^A-Za-z0-9_-]+$", "", token.strip())
+    cleaned = clean_ngrok_authtoken(token)
     if cleaned != token.strip():
         print("Removed invalid edge characters from the ngrok authtoken.")
     return cleaned
@@ -353,8 +353,10 @@ def tunnel_command(args: argparse.Namespace) -> int:
     port = args.port or _env_int("LOCALCONTROL_PORT", 8765)
     target_host = _target_host(host)
     local_base_url = f"http://{target_host}:{port}"
-    public_url = args.public_url or os.getenv("LOCALCONTROL_PUBLIC_URL")
-    domain = args.ngrok_domain or os.getenv("LOCALCONTROL_NGROK_DOMAIN")
+    raw_public_url = args.public_url or os.getenv("LOCALCONTROL_PUBLIC_URL")
+    raw_domain = args.ngrok_domain or os.getenv("LOCALCONTROL_NGROK_DOMAIN")
+    public_url = normalize_public_url(raw_public_url)
+    domain = normalize_ngrok_domain(raw_domain)
     if domain and not public_url:
         public_url = f"https://{domain}"
     download_url = args.ngrok_download_url or os.getenv("LOCALCONTROL_NGROK_DOWNLOAD_URL") or default_ngrok_download_url()

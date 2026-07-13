@@ -60,6 +60,42 @@ function ConvertTo-EnvLiteral {
     return '"' + $Value.Replace("\", "\\").Replace('"', '\"') + '"'
 }
 
+function Normalize-NgrokDomain {
+    param([AllowNull()][string]$Value)
+
+    if ([string]::IsNullOrWhiteSpace($Value)) {
+        return ""
+    }
+
+    $text = $Value.Trim().TrimEnd("/")
+    if ($text -match "^[A-Za-z][A-Za-z0-9+.-]*://") {
+        try {
+            $uri = [System.Uri]$text
+            if ($uri.Host) {
+                $text = $uri.Host
+            }
+        } catch {
+            $text = $text -replace "^[A-Za-z][A-Za-z0-9+.-]*://", ""
+        }
+    }
+
+    return (($text -split "[/?#]", 2)[0]).Trim().TrimEnd("/")
+}
+
+function Normalize-PublicUrl {
+    param([AllowNull()][string]$Value)
+
+    if ([string]::IsNullOrWhiteSpace($Value)) {
+        return ""
+    }
+
+    $text = $Value.Trim().TrimEnd("/")
+    if ($text -notmatch "^[A-Za-z][A-Za-z0-9+.-]*://") {
+        $text = "https://$text"
+    }
+    return $text.TrimEnd("/")
+}
+
 function Set-LocalEnvValue {
     param(
         [string]$Key,
@@ -455,6 +491,9 @@ function Start-Tunnel {
         [int]$ApiPort,
         [int]$UrlTimeoutSeconds
     )
+
+    $Domain = Normalize-NgrokDomain -Value $Domain
+    $ConfiguredPublicUrl = Normalize-PublicUrl -Value $ConfiguredPublicUrl
 
     $ngrokPath = Resolve-NgrokExecutable -RequestedExecutable $NgrokExecutable -DownloadUrl $DownloadUrl -DisableAutoInstall:$DisableNgrokAutoInstall
     Ensure-NgrokAuthenticated -NgrokPath $ngrokPath -Token $Authtoken -DisablePrompt:$DisableNgrokAuthPrompt

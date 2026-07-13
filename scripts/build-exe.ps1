@@ -98,8 +98,68 @@ function Resolve-NgrokForBundle {
     return Install-LocalNgrok -DownloadUrl $DownloadUrl -InstallDir $installDir
 }
 
+function Get-BuildOutputProcess {
+    param([string]$ExecutablePath)
+
+    if (-not (Test-Path -LiteralPath $ExecutablePath)) {
+        return @()
+    }
+
+    $fullPath = [System.IO.Path]::GetFullPath($ExecutablePath)
+    return @(
+        Get-CimInstance Win32_Process -ErrorAction SilentlyContinue |
+            Where-Object {
+                $_.ExecutablePath -and
+                ([System.IO.Path]::GetFullPath($_.ExecutablePath) -ieq $fullPath)
+            }
+    )
+}
+
+function Clear-BuildOutputExecutable {
+    param([string]$ExecutablePath)
+
+    if (-not (Test-Path -LiteralPath $ExecutablePath)) {
+        return
+    }
+
+    $processes = @(Get-BuildOutputProcess -ExecutablePath $ExecutablePath)
+    foreach ($process in $processes) {
+        Write-Host "Stopping existing build output: $($process.ExecutablePath) (PID $($process.ProcessId))"
+        Stop-Process -Id $process.ProcessId -Force -ErrorAction Stop
+    }
+
+    $lastError = $null
+    for ($attempt = 1; $attempt -le 40; $attempt++) {
+        $remainingProcesses = @(Get-BuildOutputProcess -ExecutablePath $ExecutablePath)
+        if ($remainingProcesses.Count -gt 0) {
+            Start-Sleep -Milliseconds 500
+            continue
+        }
+
+        try {
+            Remove-Item -LiteralPath $ExecutablePath -Force -ErrorAction Stop
+            return
+        } catch {
+            $lastError = $_.Exception.Message
+            Start-Sleep -Milliseconds 500
+        }
+    }
+
+    throw @(
+        "Could not replace $ExecutablePath because Windows denied access.",
+        "Close any running GPT-Connect.exe window/process, disable any antivirus lock temporarily, or run PowerShell as Administrator, then retry.",
+        "Original error: $lastError"
+    ) -join " "
+}
+
 $mode = if ($OneFile) { "--onefile" } else { "--onedir" }
 $webAssets = Join-Path $repo "localcontrol\web"
+$outputExe = if ($OneFile) {
+    Join-Path $repo "dist\GPT-Connect.exe"
+} else {
+    Join-Path $repo "dist\GPT-Connect\GPT-Connect.exe"
+}
+Clear-BuildOutputExecutable -ExecutablePath $outputExe
 $args = @(
     "--noconfirm",
     "--clean",

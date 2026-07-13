@@ -11,6 +11,7 @@ from typing import Any
 import yaml
 
 from .config import get_settings, load_dotenv, sha256_hex
+from .ngrok_values import normalize_ngrok_domain, normalize_public_url
 
 ENV_KEY_RE = re.compile(r"^\s*(?:export\s+)?(?P<key>[A-Za-z_][A-Za-z0-9_]*)\s*=")
 
@@ -283,12 +284,12 @@ def update_config(
         restart_required.append(NGROK_AUTHTOKEN)
 
     if ngrok_domain is not None:
-        updates[NGROK_DOMAIN] = ngrok_domain
+        updates[NGROK_DOMAIN] = normalize_ngrok_domain(ngrok_domain) or ""
         changed.append(NGROK_DOMAIN)
         restart_required.append(NGROK_DOMAIN)
 
     if public_url is not None:
-        updates[PUBLIC_URL] = public_url
+        updates[PUBLIC_URL] = normalize_public_url(public_url) or ""
         changed.append(PUBLIC_URL)
         restart_required.append(PUBLIC_URL)
 
