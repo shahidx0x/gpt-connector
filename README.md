@@ -9,7 +9,7 @@ It is like an OpenClaw-style local control layer, but without a hosted command s
 > **Privilege note:** If you start GPT-Connect as **Administrator** or **root**, it can see and control anything that privileged OS account can access.
 
 <h2>Setup Video</h2>
-<a href="https://jumpshare.com/v/IgMgSuu6bcxg2oYNazd6">
+<a href="https://www.youtube.com/watch?v=el4KizOs184">
   <strong>▶ Watch Demo Video</strong>
 </a>
 
