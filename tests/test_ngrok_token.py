@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from localcontrol.cli import _clean_ngrok_authtoken
+from pathlib import Path
+
+from localcontrol.cli import _clean_ngrok_authtoken, _ngrok_http_args
 from localcontrol.ngrok_values import normalize_ngrok_domain, normalize_public_url
 
 
@@ -16,3 +18,18 @@ def test_normalize_ngrok_domain_accepts_url_with_trailing_slash():
 
 def test_normalize_public_url_removes_trailing_slash_and_adds_scheme():
     assert normalize_public_url("demo.ngrok-free.app/") == "https://demo.ngrok-free.app"
+
+
+def test_ngrok_http_args_use_explicit_http_upstream():
+    args = _ngrok_http_args(
+        Path("ngrok.exe"),
+        "http://127.0.0.1:8765",
+        "demo.ngrok-free.app",
+    )
+
+    assert args == [
+        "ngrok.exe",
+        "http",
+        "--domain=demo.ngrok-free.app",
+        "http://127.0.0.1:8765",
+    ]

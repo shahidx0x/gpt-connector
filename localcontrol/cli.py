@@ -52,6 +52,14 @@ def _target_host(host: str) -> str:
     return host
 
 
+def _ngrok_http_args(ngrok_path: Path, upstream_url: str, domain: str | None = None) -> list[str]:
+    args = [str(ngrok_path), "http"]
+    if domain:
+        args.append(f"--domain={domain}")
+    args.append(upstream_url)
+    return args
+
+
 def _entry_command() -> list[str]:
     if getattr(sys, "frozen", False):
         return [sys.executable]
@@ -382,10 +390,7 @@ def tunnel_command(args: argparse.Namespace) -> int:
         api_process = subprocess.Popen(api_cmd, **popen_kwargs)
         _wait_health(f"{local_base_url}/health", api_process)
 
-        ngrok_args = [str(ngrok_path), "http"]
-        if domain:
-            ngrok_args.append(f"--domain={domain}")
-        ngrok_args.append(f"{target_host}:{port}")
+        ngrok_args = _ngrok_http_args(ngrok_path, local_base_url, domain)
 
         retry_count = 0
         while True:

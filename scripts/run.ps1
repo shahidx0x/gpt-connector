@@ -517,7 +517,7 @@ function Start-Tunnel {
                 $ConfiguredPublicUrl = "https://$Domain"
             }
         }
-        $ngrokArgs += "$($targetHost):$BindPort"
+        $ngrokArgs += $localBaseUrl
 
         $retryCount = 0
         $maxRetries = if ($DisableNgrokAuthPrompt) { 0 } else { 3 }

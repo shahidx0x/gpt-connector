@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import os
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 
 
 def _echo_payload(text: str) -> dict:
@@ -67,3 +69,41 @@ def test_async_job(client, auth_headers):
             break
         time.sleep(0.05)
     assert events
+
+
+def test_health_remains_responsive_while_sync_shell_waits(client, auth_headers, monkeypatch):
+    from localcontrol.api.routes import shell as shell_route
+
+    original_execute = shell_route.execute_command
+    command_started = threading.Event()
+    release_command = threading.Event()
+
+    def delayed_execute(payload):
+        command_started.set()
+        release_command.wait(timeout=2)
+        return original_execute(payload)
+
+    monkeypatch.setattr(shell_route, "execute_command", delayed_execute)
+    release_timer = threading.Timer(1, release_command.set)
+    release_timer.start()
+
+    try:
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            shell_future = executor.submit(
+                client.post,
+                "/shell/run",
+                headers=auth_headers,
+                json=_echo_payload("responsive"),
+            )
+            assert command_started.wait(timeout=1)
+
+            started_at = time.monotonic()
+            health_response = client.get("/health")
+            health_elapsed = time.monotonic() - started_at
+
+            assert health_response.status_code == 200
+            assert health_elapsed < 0.75
+            assert shell_future.result(timeout=3).status_code == 200
+    finally:
+        release_command.set()
+        release_timer.cancel()

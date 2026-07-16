@@ -227,7 +227,11 @@ jobs:
           RELEASE_TAG: ${{ steps.release_meta.outputs.tag_name }}
           RELEASE_TITLE: ${{ steps.release_meta.outputs.release_title }}
         run: |
-          notes="$(cat <<'EOF'
+          notes_file=".github/release-notes/${RELEASE_TAG}.md"
+          if [ -f "$notes_file" ]; then
+            notes="$(cat "$notes_file")"
+          else
+            notes="$(cat <<'EOF'
           Standalone GPT-Connect builds.
 
           Assets:
@@ -239,7 +243,8 @@ jobs:
 
           The executables bundle ngrok and start tunnel mode by default when launched without arguments. The first tunnel run still requires a valid ngrok authtoken.
           EOF
-          )"
+            )"
+          fi
 
           mapfile -t asset_paths < <(find release -type f | sort)
 

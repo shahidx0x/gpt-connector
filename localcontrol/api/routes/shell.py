@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Request
+from starlette.concurrency import run_in_threadpool
 
 from localcontrol.api.deps import log_success
 from localcontrol.auth import require_auth
@@ -22,7 +23,7 @@ async def shell_run(payload: ShellRunRequest, request: Request) -> ShellRunRespo
         )
         return response
 
-    response = execute_command(payload)
+    response = await run_in_threadpool(execute_command, payload)
     log_success(
         request,
         "shell.run",
@@ -36,4 +37,3 @@ async def shell_run(payload: ShellRunRequest, request: Request) -> ShellRunRespo
         },
     )
     return response
-
